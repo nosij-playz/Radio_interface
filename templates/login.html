@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ACCESS PORTAL</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* PROFESSIONAL MINIMAL WHITE DESIGN SYSTEM */
+    :root {
+      --pure-white: #FFFFFF;
+      --near-white: #F8FAFC;
+      --subtle-gray: #E5E7EB;
+      --text-primary: #111827;
+      --text-secondary: #6B7280;
+      --primary-accent: #2563EB;
+      --primary-hover: #1D4ED8;
+      --success-green: #059669;
+      --error-red: #DC2626;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: var(--near-white);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    /* SUBTLE BACKGROUND TEXTURE */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(37, 99, 235, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(37, 99, 235, 0.02) 0%, transparent 40%);
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    /* ACCESS PORTAL CONTAINER */
+    .access-portal {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    
+    /* SECURITY CARD */
+    .security-card {
+      background: var(--pure-white);
+      width: 100%;
+      max-width: 440px;
+      border-radius: 20px;
+      padding: 48px 40px;
+      box-shadow: 
+        0 4px 32px rgba(0, 0, 0, 0.04),
+        0 1px 3px rgba(0, 0, 0, 0.05),
+        0 0 0 1px rgba(0, 0, 0, 0.02);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .security-card:hover {
+      box-shadow: 
+        0 8px 48px rgba(0, 0, 0, 0.06),
+        0 2px 6px rgba(0, 0, 0, 0.04),
+        0 0 0 1px rgba(0, 0, 0, 0.03);
+      transform: translateY(-2px);
+    }
+    
+    /* SECURITY BORDER */
+    .security-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, 
+        var(--primary-accent), 
+        #7C3AED, 
+        var(--primary-accent));
+      background-size: 200% 100%;
+      animation: securityScan 3s linear infinite;
+    }
+    
+    @keyframes securityScan {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    
+    /* PORTAL HEADER */
+    .portal-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .portal-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--near-white);
+      border-radius: 16px;
+      border: 1px solid var(--subtle-gray);
+      position: relative;
+    }
+    
+    .portal-icon::before {
+      content: '';
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      background: var(--primary-accent);
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2a10 10 0 0 0-9.78 12.13A10 10 0 0 0 12 22a10 10 0 0 0 9.78-7.87A10 10 0 0 0 12 2z'/%3E%3Cpath d='M9 12l2 2 4-4'/%3E%3C/svg%3E");
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2a10 10 0 0 0-9.78 12.13A10 10 0 0 0 12 22a10 10 0 0 0 9.78-7.87A10 10 0 0 0 12 2z'/%3E%3Cpath d='M9 12l2 2 4-4'/%3E%3C/svg%3E");
+      mask-repeat: no-repeat;
+      -webkit-mask-repeat: no-repeat;
+      mask-position: center;
+      -webkit-mask-position: center;
+      animation: iconPulse 4s ease-in-out infinite;
+    }
+    
+    @keyframes iconPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    
+    .portal-title {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 8px 0;
+      letter-spacing: -0.02em;
+    }
+    
+    .portal-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 400;
+      letter-spacing: 0.02em;
+    }
+    
+    /* ACCESS FORM */
+    .access-form {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    
+    .form-group {
+      position: relative;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    
+    .form-input {
+      width: 100%;
+      padding: 16px;
+      background: var(--pure-white);
+      border: 1px solid var(--subtle-gray);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-size: 15px;
+      font-weight: 400;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-feature-settings: "tnum" 1;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary-accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      background: var(--pure-white);
+    }
+    
+    .form-input:hover:not(:focus) {
+      border-color: #9CA3AF;
+    }
+    
+    .form-input::placeholder {
+      color: #9CA3AF;
+      font-weight: 400;
+    }
+    
+    .input-icon {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9CA3AF;
+      pointer-events: none;
+      transition: color 0.2s;
+    }
+    
+    .form-input:focus + .input-icon {
+      color: var(--primary-accent);
+    }
+    
+    /* ACCESS BUTTON */
+    .access-btn {
+      width: 100%;
+      padding: 18px;
+      background: var(--primary-accent);
+      border: none;
+      border-radius: 12px;
+      color: var(--pure-white);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .access-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent);
+      transition: left 0.6s;
+    }
+    
+    .access-btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.2);
+    }
+    
+    .access-btn:hover::before {
+      left: 100%;
+    }
+    
+    .access-btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn-icon {
+      width: 18px;
+      height: 18px;
+      transition: transform 0.2s;
+    }
+    
+    .access-btn:hover .btn-icon {
+      transform: translateX(3px);
+    }
+    
+    /* SECURITY STATUS */
+    .security-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 24px 0;
+      padding: 16px;
+      background: var(--near-white);
+      border-radius: 12px;
+      border: 1px solid var(--subtle-gray);
+    }
+    
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--success-green);
+      border-radius: 50%;
+      position: relative;
+    }
+    
+    .status-dot::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      left: -3px;
+      right: -3px;
+      bottom: -3px;
+      background: var(--success-green);
+      border-radius: 50%;
+      opacity: 0.3;
+      animation: statusPulse 2s infinite;
+    }
+    
+    @keyframes statusPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.5); }
+    }
+    
+    .status-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    /* ACCESS FOOTER */
+    .access-footer {
+      text-align: center;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--subtle-gray);
+    }
+    
+    .access-footer-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    
+    .access-link {
+      color: var(--primary-accent);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s;
+      position: relative;
+    }
+    
+    .access-link::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: var(--primary-accent);
+      transition: width 0.2s;
+    }
+    
+    .access-link:hover {
+      color: var(--primary-hover);
+    }
+    
+    .access-link:hover::after {
+      width: 100%;
+    }
+    
+    /* ERROR STATES */
+    .error-message {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      padding: 16px 20px;
+      background: var(--pure-white);
+      border: 1px solid #FECACA;
+      border-radius: 12px;
+      color: var(--error-red);
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transform: translateX(120%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .error-message.show {
+      transform: translateX(0);
+    }
+    
+    .form-input.error {
+      border-color: var(--error-red);
+      animation: inputShake 0.4s;
+    }
+    
+    @keyframes inputShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-3px); }
+      75% { transform: translateX(3px); }
+    }
+    
+    /* RESPONSIVE */
+    @media (max-width: 640px) {
+      .security-card {
+        padding: 40px 32px;
+        max-width: 90%;
+      }
+      
+      .portal-title {
+        font-size: 24px;
+      }
+      
+      .portal-icon {
+        width: 48px;
+        height: 48px;
+      }
+      
+      .form-input {
+        padding: 14px;
+      }
+      
+      .access-btn {
+        padding: 16px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .security-card {
+        padding: 32px 24px;
+      }
+      
+      .portal-title {
+        font-size: 22px;
+      }
+      
+      .security-status {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+      }
+    }
+    
+    /* LOADING STATE */
+    .access-btn.loading {
+      position: relative;
+      color: transparent;
+    }
+    
+    .access-btn.loading::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: var(--pure-white);
+      border-radius: 50%;
+      animation: buttonSpin 0.8s linear infinite;
+    }
+    
+    @keyframes buttonSpin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <!-- ACCESS PORTAL -->
+  <div class="access-portal">
+    <div class="security-card">
+      <!-- PORTAL HEADER -->
+      <div class="portal-header">
+        <div class="portal-icon"></div>
+        <h1 class="portal-title">System Access</h1>
+        <p class="portal-subtitle">Secure authentication required</p>
+      </div>
+      
+      <!-- ACCESS FORM -->
+      <form method="post" class="access-form">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input 
+            name="username" 
+            class="form-input" 
+            placeholder="Enter your username" 
+            required
+            autocomplete="username"
+          >
+          <div class="input-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input 
+            name="password" 
+            type="password" 
+            class="form-input" 
+            placeholder="Enter your password" 
+            required
+            autocomplete="current-password"
+          >
+          <div class="input-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+        </div>
+        
+        <button type="submit" class="access-btn">
+          <span class="btn-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14"/>
+              <path d="m12 5 7 7-7 7"/>
+            </svg>
+          </span>
+          Continue
+        </button>
+      </form>
+      
+      <!-- SECURITY STATUS -->
+      <div class="security-status">
+        <div class="status-dot"></div>
+        <div class="status-text">Connection secured • TLS 1.3</div>
+      </div>
+      
+      <!-- ACCESS FOOTER -->
+      <div class="access-footer">
+        <div class="access-footer-text">
+          No account? <a href="/register" class="access-link">Request access</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ERROR MESSAGE -->
+  <div class="error-message" id="errorMessage">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    Authentication failed. Please try again.
+  </div>
+  
+  <script>
+    // Form submission handling
+    const form = document.querySelector('form');
+    const submitBtn = form.querySelector('.access-btn');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    form.addEventListener('submit', function(e) {
+      // Show loading state
+      submitBtn.classList.add('loading');
+      submitBtn.disabled = true;
+      
+      // Simulate server response delay
+      setTimeout(() => {
+        // If there was an error (you would check server response)
+        {% if error %}
+          showError('Authentication failed. Please check your credentials.');
+          submitBtn.classList.remove('loading');
+          submitBtn.disabled = false;
+          e.preventDefault();
+        {% endif %}
+      }, 1500);
+    });
+    
+    // Show error function
+    function showError(message) {
+      errorMessage.querySelector('svg').nextSibling.textContent = ' ' + message;
+      errorMessage.classList.add('show');
+      
+      // Add error state to inputs
+      const inputs = form.querySelectorAll('.form-input');
+      inputs.forEach(input => {
+        input.classList.add('error');
+        setTimeout(() => input.classList.remove('error'), 400);
+      });
+      
+      // Hide error after 4 seconds
+      setTimeout(() => {
+        errorMessage.classList.remove('show');
+      }, 4000);
+    }
+    
+    // Input focus effects
+    const inputs = document.querySelectorAll('.form-input');
+    inputs.forEach(input => {
+      input.addEventListener('focus', function() {
+        this.parentElement.style.transform = 'translateY(-1px)';
+      });
+      
+      input.addEventListener('blur', function() {
+        this.parentElement.style.transform = 'translateY(0)';
+      });
+    });
+    
+    // Auto-hide error on successful input
+    inputs.forEach(input => {
+      input.addEventListener('input', function() {
+        if (errorMessage.classList.contains('show')) {
+          errorMessage.classList.remove('show');
+        }
+      });
+    });
+    
+    // Add smooth transitions for form groups
+    const formGroups = document.querySelectorAll('.form-group');
+    formGroups.forEach(group => {
+      group.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+    });
+  </script>
+</body>
+</html>

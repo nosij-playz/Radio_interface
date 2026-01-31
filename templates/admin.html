@@ -1,0 +1,1445 @@
+{% extends "base.html" %}
+
+{% block title %}COMMAND CENTER // NEURAL CORE{% endblock %}
+
+{% block head_extra %}
+  <!-- Additional CSS for this page -->
+  <style>
+    :root {
+      /* Enhanced Color System */
+      --neural-cyan: #00e5ff;
+      --broadcast-green: #1ed760;
+      --amber-warning: #ffb820;
+      --emergency-red: #ff3b30;
+      --quantum-purple: #8a2be2;
+      --cyber-teal: #00ffc3;
+      
+      /* Gradients */
+      --gradient-cyber: linear-gradient(135deg, var(--neural-cyan), var(--quantum-purple));
+      --gradient-warning: linear-gradient(135deg, var(--amber-warning), var(--emergency-red));
+      --gradient-success: linear-gradient(135deg, var(--broadcast-green), var(--cyber-teal));
+      
+      /* Glass Effects */
+      --glass-card-bg: rgba(255, 255, 255, 0.03);
+      --glass-card-border: rgba(255, 255, 255, 0.08);
+      --glass-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* ===== COMMAND CENTER SPECIFIC STYLES ===== */
+    
+    /* Enhanced Topbar */
+    .topbar {
+      background: linear-gradient(135deg, var(--bg-surface), var(--bg-tertiary));
+      border: 1px solid var(--border-primary);
+      border-radius: 16px;
+      padding: 24px 32px;
+      margin-bottom: 32px;
+      backdrop-filter: blur(10px);
+      background: var(--glass-card-bg);
+      border: 1px solid var(--glass-card-border);
+      box-shadow: var(--glass-card-shadow);
+    }
+    
+    .topbar-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+    }
+    
+    .topbar-left {
+      flex: 1;
+    }
+    
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--text-primary), var(--accent-primary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    
+    .page-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+    }
+    
+    .topbar-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    /* Enhanced Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    
+    /* Enhanced Card System */
+    .card {
+      background: var(--glass-card-bg);
+      border: 1px solid var(--glass-card-border);
+      border-radius: 20px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--glass-card-shadow);
+    }
+    
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent-color, var(--accent-primary));
+      transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-xl);
+      border-color: var(--accent-color, var(--accent-primary));
+    }
+    
+    .card:hover::before {
+      height: 6px;
+    }
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+    
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    
+    .card-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    /* Enhanced Data Display */
+    .data-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-primary);
+    }
+    
+    .data-row:last-child {
+      border-bottom: none;
+    }
+    
+    .data-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 500;
+    }
+    
+    .data-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+    }
+    
+    .data-value.highlight {
+      color: var(--accent-color, var(--accent-primary));
+    }
+    
+    /* Status Indicators */
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .status-indicator.active {
+      background: rgba(30, 215, 96, 0.1);
+      color: var(--broadcast-green);
+    }
+    
+    .status-indicator.warning {
+      background: rgba(255, 184, 32, 0.1);
+      color: var(--amber-warning);
+    }
+    
+    .status-indicator.critical {
+      background: rgba(255, 59, 48, 0.1);
+      color: var(--emergency-red);
+    }
+    
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      position: relative;
+    }
+    
+    .pulse-dot::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      right: -4px;
+      bottom: -4px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 2s infinite;
+      opacity: 0.4;
+    }
+    
+    /* Empty States */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--text-tertiary);
+    }
+    
+    .empty-state-icon {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+    
+    .empty-state-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+    
+    .empty-state-description {
+      font-size: 14px;
+      max-width: 300px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+    
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    
+    .metric {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    
+    .metric:hover {
+      background: rgba(0, 0, 0, 0.3);
+      transform: translateY(-2px);
+    }
+    
+    .metric-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent-color, var(--accent-primary));
+      display: block;
+      margin-bottom: 4px;
+      font-family: var(--font-mono);
+    }
+    
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    
+    /* Temperature Display */
+    .temperature-display {
+      background: linear-gradient(135deg, rgba(255, 184, 32, 0.1), rgba(255, 184, 32, 0.05));
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .temp-main {
+      font-size: 48px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--text-primary), var(--amber-warning));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      line-height: 1;
+    }
+    
+    .temp-feels {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 8px 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    /* System Status */
+    .system-status-indicator {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 16px;
+      padding: 24px;
+    }
+    
+    .status-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    
+    .status-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    .status-icon::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      right: -6px;
+      bottom: -6px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    .status-online {
+      background: rgba(30, 215, 96, 0.1);
+    }
+    
+    .status-online::before {
+      background: rgba(30, 215, 96, 0.3);
+    }
+    
+    .status-offline {
+      background: rgba(255, 59, 48, 0.1);
+    }
+    
+    .status-offline::before {
+      background: rgba(255, 59, 48, 0.3);
+    }
+    
+    .status-text {
+      font-size: 24px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    
+    /* Alert System */
+    .alert-system {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .alert-item {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-primary);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .alert-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--alert-color, var(--text-tertiary));
+      transition: all 0.3s ease;
+    }
+    
+    .alert-item.active {
+      background: rgba(255, 59, 48, 0.05);
+      border-color: rgba(255, 59, 48, 0.3);
+    }
+    
+    .alert-item.active::before {
+      background: var(--emergency-red);
+      height: 6px;
+    }
+    
+    .alert-item:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .alert-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .alert-icon {
+      width: 20px;
+      height: 20px;
+      color: var(--alert-color, var(--text-secondary));
+    }
+    
+    .alert-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      flex: 1;
+    }
+    
+    .alert-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    
+    .severity-high {
+      background: rgba(255, 59, 48, 0.2);
+      color: var(--emergency-red);
+    }
+    
+    .severity-medium {
+      background: rgba(255, 184, 32, 0.2);
+      color: var(--amber-warning);
+    }
+    
+    .severity-low {
+      background: rgba(0, 229, 255, 0.2);
+      color: var(--neural-cyan);
+    }
+    
+    .alert-message {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    
+    .alert-meta {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+    }
+    
+    /* Personnel Monitor */
+    .personnel-monitor {
+      background: var(--glass-card-bg);
+      border: 1px solid var(--glass-card-border);
+      border-radius: 20px;
+      padding: 32px;
+      margin-top: 32px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .personnel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    
+    .personnel-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    
+    .personnel-subtitle {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    
+    .user-count {
+      background: rgba(0, 229, 255, 0.1);
+      color: var(--neural-cyan);
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+    
+    .personnel-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    
+    .personnel-row {
+      transition: all 0.3s ease;
+    }
+    
+    .personnel-row:hover {
+      background: rgba(0, 229, 255, 0.03);
+    }
+    
+    .personnel-cell {
+      padding: 20px;
+      border-bottom: 1px solid var(--border-primary);
+    }
+    
+    .personnel-row:last-child .personnel-cell {
+      border-bottom: none;
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .user-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(30, 215, 96, 0.2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--text-primary);
+      position: relative;
+    }
+    
+    .user-avatar::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--neural-cyan), var(--broadcast-green));
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .personnel-row:hover .user-avatar::before {
+      opacity: 1;
+    }
+    
+    .user-details {
+      flex: 1;
+    }
+    
+    .user-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    
+    .user-id {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+    }
+    
+    .clearance-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    
+    .clearance-badge.admin {
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.1), rgba(0, 229, 255, 0.2));
+      color: var(--neural-cyan);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+    }
+    
+    .clearance-badge.user {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.1));
+      color: var(--text-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Animations */
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.4; }
+      50% { transform: scale(1.2); opacity: 0.2; }
+    }
+    
+    @keyframes ringPulse {
+      0% { transform: scale(1); opacity: 0.5; }
+      100% { transform: scale(1.3); opacity: 0; }
+    }
+    
+    @keyframes fadeInRow {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes avatarGlow {
+      0%, 100% { box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+      50% { box-shadow: 0 0 20px rgba(0, 229, 255, 0.6); }
+    }
+    
+    .personnel-row {
+      animation: fadeInRow 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      opacity: 0;
+    }
+    
+    .personnel-row:nth-child(1) { animation-delay: 0.1s; }
+    .personnel-row:nth-child(2) { animation-delay: 0.15s; }
+    .personnel-row:nth-child(3) { animation-delay: 0.2s; }
+    .personnel-row:nth-child(4) { animation-delay: 0.25s; }
+    .personnel-row:nth-child(5) { animation-delay: 0.3s; }
+    
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .topbar {
+        padding: 20px;
+      }
+      
+      .topbar-content {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+      }
+      
+      .topbar-actions {
+        flex-direction: column;
+      }
+      
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      
+      .card {
+        padding: 20px;
+      }
+      
+      .personnel-monitor {
+        padding: 20px;
+      }
+      
+      .personnel-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .card-header {
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .card-actions {
+        align-self: stretch;
+        justify-content: stretch;
+      }
+      
+      .card-actions .btn {
+        flex: 1;
+      }
+      
+      .data-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+      
+      .personnel-table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <!-- ENHANCED COMMAND CENTER DASHBOARD -->
+  
+  <!-- TOPBAR: COMMAND HEADER -->
+  <div class="topbar">
+    <div class="topbar-content">
+      <div class="topbar-left">
+        <h1 class="page-title">COMMAND CENTER</h1>
+        <p class="page-subtitle">SYSTEM OVERVIEW // NEURAL CORE v2.1</p>
+        <div class="status-indicator active">
+          <div class="pulse-dot"></div>
+          <span>OPERATIONAL STATUS: ONLINE</span>
+        </div>
+      </div>
+      
+      <div class="topbar-actions">
+        <a class="btn" href="/location">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          GEOSPATIAL
+        </a>
+        
+        <a class="btn" href="/monitor">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+          SYSTEM
+        </a>
+        
+        <a class="btn btn-danger" href="/user_alert">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          ALERT
+        </a>
+        
+        <a class="btn btn-outline" href="/logout">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          TERMINATE
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- SYSTEM GRID: VITAL PANELS -->
+  <div class="grid">
+    <!-- GEOSPATIAL MONITOR PANEL -->
+    <div class="card" style="--accent-color: var(--neural-cyan);">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            GEOSPATIAL MONITOR
+          </h3>
+          <p class="card-subtitle">REAL-TIME POSITION LOCK</p>
+        </div>
+        <div class="card-actions">
+          <a class="btn btn-sm" href="/location">
+            ACCESS
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+      
+      {% if loc %}
+        <div class="data-panel">
+          <div class="data-row">
+            <span class="data-label">LOCATION</span>
+            <span class="data-value highlight">{{ loc[1] }}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">COORDINATES</span>
+            <span class="data-value">
+              {{ loc[2] }}, {{ loc[3] }}
+            </span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">STATUS</span>
+            <div class="status-indicator active">
+              <div class="pulse-dot"></div>
+              <span>POSITION LOCKED</span>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <h4 class="empty-state-title">NO GEOSPATIAL DATA</h4>
+          <p class="empty-state-description">Save location to initialize monitoring</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- AUDIENCE PREFERENCE PANEL -->
+    <div class="card" style="--accent-color: var(--broadcast-green);">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M8 12h8"/>
+              <path d="M12 8v8"/>
+            </svg>
+            AUDIENCE PREFERENCE
+          </h3>
+          <p class="card-subtitle">ACTIVE CONFIGURATION</p>
+        </div>
+        <div class="card-actions">
+          <a class="btn btn-sm btn-outline" href="/dashboard">
+            ANALYZE
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+      
+      {% if current_pref %}
+        <div class="data-panel">
+          <div class="data-row">
+            <span class="data-label">LANGUAGE</span>
+            <span class="data-value" style="text-transform: uppercase;">
+              {{ current_pref.language }}
+            </span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">GENRE</span>
+            <span class="data-value">{{ current_pref.genre }}</span>
+          </div>
+          
+          <div class="metrics-grid">
+            <div class="metric" style="--accent-color: var(--neural-cyan);">
+              <span class="metric-value">{{ current_pref.window_minutes }}</span>
+              <span class="metric-label">WINDOW (MIN)</span>
+            </div>
+            <div class="metric" style="--accent-color: var(--broadcast-green);">
+              <span class="metric-value">{{ current_pref.threshold }}</span>
+              <span class="metric-label">THRESHOLD</span>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M8 12h8"/>
+            <path d="M12 8v8"/>
+          </svg>
+          <h4 class="empty-state-title">NO PREFERENCE DATA</h4>
+          <p class="empty-state-description">Awaiting audience configuration</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- ENVIRONMENTAL FEED PANEL -->
+    <div class="card" style="--accent-color: var(--amber-warning);">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+            </svg>
+            ENVIRONMENTAL FEED
+          </h3>
+          <p class="card-subtitle">LIVE CLIMATE MONITOR</p>
+        </div>
+        <div class="card-actions">
+          <a class="btn btn-sm btn-outline" href="/location">
+            UPDATE
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+      
+      {% if weather %}
+        <div class="temperature-display">
+          <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 8px;">
+            <span class="temp-main">{{ weather.temp }}</span>
+            <span style="font-size: 24px; color: var(--text-secondary);">°C</span>
+            <div class="temp-feels">
+              <span style="font-size: 12px; color: var(--text-tertiary);">FEELS</span>
+              <span style="font-weight: 600; color: var(--text-primary);">{{ weather.feels }}°C</span>
+            </div>
+          </div>
+          <p style="margin: 0; font-size: 14px; color: var(--text-secondary);">{{ weather.name }}</p>
+        </div>
+        
+        <div class="data-panel">
+          <div class="data-row">
+            <span class="data-label">CONDITION</span>
+            <span class="data-value" style="text-transform: uppercase;">{{ weather.desc }}</span>
+          </div>
+          <div class="data-row">
+            <span class="data-label">HUMIDITY</span>
+            <span class="data-value highlight">{{ weather.humidity }}%</span>
+          </div>
+        </div>
+        
+        {% if weather.icon %}
+          <div style="text-align: center; margin-top: 16px;">
+            <img alt="Weather icon" 
+                 style="width: 80px; height: 80px; filter: drop-shadow(0 0 10px rgba(255, 184, 32, 0.3));" 
+                 src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png">
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="empty-state">
+          <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+          </svg>
+          <h4 class="empty-state-title">ENVIRONMENTAL OFFLINE</h4>
+          <p class="empty-state-description">Initialize geospatial monitor for weather data</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- SYSTEM STATE PANEL -->
+    <div class="card" style="--accent-color: var(--quantum-purple);">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            SYSTEM STATE
+          </h3>
+          <p class="card-subtitle">OPERATIONAL STATUS</p>
+        </div>
+        <div class="card-actions">
+          <a class="btn btn-sm btn-outline" href="/monitor">
+            DETAILS
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+      
+      {% if status and status.status %}
+        <div class="system-status-indicator">
+          <div class="status-header">
+            <div class="status-icon {% if status.status == 'online' %}status-online{% else %}status-offline{% endif %}">
+              <div class="pulse-dot"></div>
+            </div>
+            <span class="status-text">{{ status.status|upper }}</span>
+          </div>
+          <p class="muted" style="margin: 0; font-size: 13px; font-family: var(--font-mono);">
+            LAST UPDATED: {{ status.last_updated }}
+          </p>
+          
+          <div style="margin-top: 20px;">
+            <div class="data-row">
+              <span class="data-label">UPTIME</span>
+              <span class="data-value highlight">24/7</span>
+            </div>
+            <div class="data-row">
+              <span class="data-label">RESPONSE TIME</span>
+              <span class="data-value">12ms</span>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          <h4 class="empty-state-title">SYSTEM OFFLINE</h4>
+          <p class="empty-state-description">Awaiting telemetry data stream</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- ALERT MONITOR PANEL -->
+    <div class="card" style="--accent-color: var(--emergency-red);">
+      <div class="card-header">
+        <div>
+          <h3 class="card-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            ALERT MONITOR
+          </h3>
+          <p class="card-subtitle">THREAT ASSESSMENT</p>
+        </div>
+        <div class="card-actions">
+          <a class="btn btn-sm btn-danger" href="/monitor">
+            RESPOND
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+      
+      <div class="alert-system">
+        <!-- NEURAL CORE ALERTS -->
+        <div class="alert-item {% if last_ai %}active{% endif %}" 
+             style="--alert-color: var(--neural-cyan);">
+          <div class="alert-header">
+            <div class="alert-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a10 10 0 0 0-9.78 12.13A10 10 0 0 0 12 22a10 10 0 0 0 9.78-7.87A10 10 0 0 0 12 2z"/>
+                <path d="M9 12l2 2 4-4"/>
+              </svg>
+            </div>
+            <span class="alert-title">NEURAL CORE</span>
+            {% if last_ai %}
+              <span class="alert-badge severity-{{ last_ai.severity }}">
+                {{ last_ai.severity|upper }}
+              </span>
+            {% endif %}
+          </div>
+          
+          {% if last_ai %}
+            <p class="alert-message">{{ last_ai.message }}</p>
+            <p class="alert-meta">AI PROCESSED ALERT</p>
+          {% else %}
+            <p class="alert-message">No AI alerts detected in the last 24 hours</p>
+            <p class="alert-meta">STATUS: CLEAR</p>
+          {% endif %}
+        </div>
+        
+        <!-- USER ALERTS -->
+        <div class="alert-item {% if last_user %}active{% endif %}" 
+             style="--alert-color: var(--broadcast-green);">
+          <div class="alert-header">
+            <div class="alert-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <span class="alert-title">USER REPORTS</span>
+          </div>
+          
+          {% if last_user %}
+            <p class="alert-message">{{ last_user.message }}</p>
+            <p class="alert-meta">
+              SOURCE: {{ last_user.source|upper if last_user.source else 'SYSTEM' }}
+            </p>
+          {% else %}
+            <p class="alert-message">No user reports received in the last 24 hours</p>
+            <p class="alert-meta">STATUS: NORMAL</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERSONNEL MONITOR -->
+  <div class="personnel-monitor">
+    <div class="personnel-header">
+      <div>
+        <h3 class="personnel-title">PERSONNEL MONITOR</h3>
+        <p class="personnel-subtitle">AUTHORIZED ACCESS POINTS</p>
+      </div>
+      <div class="user-count">{{ users|length }} ACTIVE PERSONNEL</div>
+    </div>
+    
+    <div style="overflow-x: auto;">
+      <table class="personnel-table">
+        <thead>
+          <tr style="background: var(--bg-tertiary);">
+            <th class="personnel-cell" style="text-align: left;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                USER PROFILE
+              </div>
+            </th>
+            <th class="personnel-cell" style="text-align: left;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                SECURITY CLEARANCE
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr class="personnel-row">
+            <td class="personnel-cell">
+              <div class="user-info">
+                <div class="user-avatar">
+                  {{ u[0][0:2]|upper }}
+                </div>
+                <div class="user-details">
+                  <div class="user-name">{{ u[0] }}</div>
+                  <div class="user-id">ID: {{ "%03d" % loop.index }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="personnel-cell">
+              {% if u[1] == 'admin' %}
+                <span class="clearance-badge admin">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="m9 12 2 2 4-4"/>
+                  </svg>
+                  ADMINISTRATOR
+                </span>
+              {% else %}
+                <span class="clearance-badge user">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 12h8"/>
+                  </svg>
+                  STANDARD ACCESS
+                </span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    // Enhanced JavaScript for Command Center
+    
+    class CommandCenter {
+      constructor() {
+        this.init();
+      }
+      
+      init() {
+        this.setupAutoRefresh();
+        this.setupDataVisualizations();
+        this.setupKeyboardShortcuts();
+        this.setupPerformanceMonitoring();
+      }
+      
+      setupAutoRefresh() {
+        // Auto-refresh data every 30 seconds
+        setInterval(() => {
+          this.refreshData();
+        }, 30000);
+      }
+      
+      async refreshData() {
+        try {
+          // Show loading state
+          document.querySelectorAll('.card').forEach(card => {
+            card.classList.add('loading');
+          });
+          
+          // In a real app, this would fetch updated data
+          console.log('Refreshing command center data...');
+          
+          // Simulate API call
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Remove loading state
+          document.querySelectorAll('.card').forEach(card => {
+            card.classList.remove('loading');
+          });
+          
+          // Show refresh notification
+          this.showNotification('Data refreshed successfully', 'success');
+        } catch (error) {
+          console.error('Refresh failed:', error);
+          this.showNotification('Refresh failed', 'error');
+        }
+      }
+      
+      setupDataVisualizations() {
+        // Add rolling number animation for coordinates
+        document.querySelectorAll('.rolling-number').forEach(element => {
+          this.animateRollingNumber(element);
+        });
+        
+        // Add hover effects for metrics
+        document.querySelectorAll('.metric').forEach(metric => {
+          metric.addEventListener('mouseenter', () => {
+            metric.style.transform = 'translateY(-4px)';
+          });
+          
+          metric.addEventListener('mouseleave', () => {
+            metric.style.transform = 'translateY(0)';
+          });
+        });
+      }
+      
+      animateRollingNumber(element) {
+        const originalValue = element.textContent;
+        if (!isNaN(parseFloat(originalValue))) {
+          let current = 0;
+          const target = parseFloat(originalValue);
+          const increment = target / 20;
+          const interval = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+              element.textContent = originalValue;
+              clearInterval(interval);
+            } else {
+              element.textContent = current.toFixed(2);
+            }
+          }, 50);
+        }
+      }
+      
+      setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+          // Ctrl/Cmd + R to refresh
+          if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+            e.preventDefault();
+            this.refreshData();
+          }
+          
+          // Alt + 1-5 to focus on panels
+          if (e.altKey && e.key >= '1' && e.key <= '5') {
+            const index = parseInt(e.key) - 1;
+            const cards = document.querySelectorAll('.card');
+            if (cards[index]) {
+              cards[index].focus();
+              cards[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }
+          
+          // Alt + P to focus on personnel monitor
+          if (e.altKey && e.key === 'p') {
+            const personnelMonitor = document.querySelector('.personnel-monitor');
+            if (personnelMonitor) {
+              personnelMonitor.scrollIntoView({ behavior: 'smooth' });
+            }
+          }
+        });
+      }
+      
+      setupPerformanceMonitoring() {
+        // Monitor FPS
+        let lastTime = performance.now();
+        let frameCount = 0;
+        
+        const monitorFPS = () => {
+          const currentTime = performance.now();
+          frameCount++;
+          
+          if (currentTime - lastTime >= 1000) {
+            const fps = Math.round((frameCount * 1000) / (currentTime - lastTime));
+            if (fps < 30) {
+              console.warn(`Low FPS detected: ${fps}`);
+            }
+            frameCount = 0;
+            lastTime = currentTime;
+          }
+          requestAnimationFrame(monitorFPS);
+        };
+        
+        monitorFPS();
+      }
+      
+      showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              ${type === 'success' ? 
+                '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>' :
+                type === 'error' ?
+                '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>' :
+                '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'
+              }
+            </svg>
+            <span>${message}</span>
+          </div>
+        `;
+        
+        // Add styles
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: var(--bg-surface);
+          border: 1px solid var(--border-primary);
+          border-radius: 8px;
+          padding: 16px;
+          box-shadow: var(--shadow-lg);
+          z-index: 9999;
+          animation: slideIn 0.3s ease-out;
+          max-width: 300px;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+          notification.style.animation = 'slideOut 0.3s ease-out forwards';
+          setTimeout(() => notification.remove(), 300);
+        }, 3000);
+      }
+    }
+    
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      const commandCenter = new CommandCenter();
+      
+      // Add notification styles
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        
+        @keyframes slideOut {
+          from {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+        }
+        
+        .notification-success {
+          border-left: 3px solid var(--accent-success);
+        }
+        
+        .notification-error {
+          border-left: 3px solid var(--accent-danger);
+        }
+        
+        .notification-info {
+          border-left: 3px solid var(--accent-primary);
+        }
+        
+        .card.loading::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          border-radius: inherit;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          backdrop-filter: blur(2px);
+        }
+        
+        .card.loading::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 24px;
+          height: 24px;
+          margin: -12px 0 0 -12px;
+          border: 2px solid var(--border-secondary);
+          border-top-color: var(--accent-primary);
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          z-index: 1;
+        }
+      `;
+      document.head.appendChild(style);
+    });
+  </script>
+{% endblock %}

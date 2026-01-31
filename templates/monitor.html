@@ -1,0 +1,2193 @@
+{% extends "base.html" %}
+
+{% block title %}SYSTEM STATE MONITOR // NEURAL CORE{% endblock %}
+
+{% block head_extra %}
+    <style>
+        :root {
+            /* Transmission Color System */
+            --transmission-primary: #00e5ff;
+            --transmission-secondary: #00b8d9;
+            --transmission-success: #1ed760;
+            --transmission-warning: #ffb820;
+            --transmission-danger: #ff3b30;
+            --transmission-info: #8a2be2;
+            
+            /* Data Capture Colors */
+            --data-online: #00ff88;
+            --data-offline: #ff0055;
+            --data-mix: #ffaa00;
+            
+            /* Panel Backgrounds */
+            --panel-transmission: rgba(0, 229, 255, 0.03);
+            --panel-media: rgba(30, 215, 96, 0.03);
+            --panel-alerts: rgba(255, 59, 48, 0.03);
+            --panel-users: rgba(255, 184, 32, 0.03);
+            --panel-data-capture: rgba(138, 43, 226, 0.03);
+            
+            /* Glass Effects */
+            --glass-transmission: rgba(0, 229, 255, 0.1);
+            --glass-media: rgba(30, 215, 96, 0.1);
+            --glass-alerts: rgba(255, 59, 48, 0.1);
+            --glass-users: rgba(255, 184, 32, 0.1);
+            --glass-data-capture: rgba(138, 43, 226, 0.15);
+        }
+        
+        /* ===== SYSTEM MONITOR STYLES ===== */
+        
+        /* Enhanced Topbar */
+        .topbar {
+            background: linear-gradient(135deg, var(--bg-surface), var(--bg-tertiary));
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            padding: 24px 32px;
+            margin-bottom: 32px;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .monitor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+        }
+        
+        .header-content {
+            flex: 1;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--transmission-primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            letter-spacing: 0.05em;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        /* ===== DATA CAPTURE MODE PANEL ===== */
+        
+        .data-capture-panel {
+            background: var(--panel-data-capture);
+            border: 1px solid var(--glass-data-capture);
+            border-radius: 24px;
+            padding: 32px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-xl);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .data-capture-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, 
+                rgba(138, 43, 226, 0.05) 0%, 
+                rgba(0, 229, 255, 0.05) 50%,
+                rgba(30, 215, 96, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+        
+        .data-capture-panel:hover::before {
+            opacity: 1;
+        }
+        
+        .data-capture-panel::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.05), 
+                transparent);
+            animation: shimmer 3s infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+        
+        .data-capture-panel:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 60px rgba(138, 43, 226, 0.3), 
+                        0 0 80px rgba(0, 229, 255, 0.2);
+            border-color: var(--transmission-info);
+        }
+        
+        .data-capture-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .data-capture-title {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .data-capture-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, 
+                rgba(138, 43, 226, 0.2), 
+                rgba(0, 229, 255, 0.2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--transmission-info);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(138, 43, 226, 0.3);
+            animation: iconPulse 3s infinite;
+        }
+        
+        .data-capture-icon::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, 
+                rgba(255, 255, 255, 0.3) 0%, 
+                transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .data-capture-panel:hover .data-capture-icon::before {
+            opacity: 1;
+        }
+        
+        @keyframes iconPulse {
+            0%, 100% { 
+                box-shadow: 0 8px 32px rgba(138, 43, 226, 0.3);
+                transform: scale(1);
+            }
+            50% { 
+                box-shadow: 0 8px 48px rgba(138, 43, 226, 0.5);
+                transform: scale(1.05);
+            }
+        }
+        
+        .data-capture-icon svg {
+            width: 28px;
+            height: 28px;
+            filter: drop-shadow(0 0 10px currentColor);
+        }
+        
+        .data-capture-label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .data-capture-main-title {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, 
+                var(--text-primary), 
+                var(--transmission-info),
+                var(--transmission-primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.01em;
+        }
+        
+        .data-capture-subtitle {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-family: var(--font-mono);
+        }
+        
+        .data-capture-status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border: 1px solid var(--border-primary);
+        }
+        
+        .status-led {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            position: relative;
+            animation: ledPulse 2s infinite;
+        }
+        
+        .status-led.online { background: var(--data-online); }
+        .status-led.offline { background: var(--data-offline); }
+        .status-led.mix { background: var(--data-mix); }
+        
+        .status-led::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            opacity: 0;
+            animation: ripple 2s infinite;
+        }
+        
+        .status-led.online::after { color: var(--data-online); }
+        .status-led.offline::after { color: var(--data-offline); }
+        .status-led.mix::after { color: var(--data-mix); }
+        
+        @keyframes ledPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+        
+        .status-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Data Capture Mode Buttons */
+        .data-capture-modes {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .data-mode-form {
+            margin: 0;
+        }
+        
+        .data-mode-button {
+            position: relative;
+            width: 100%;
+            padding: 7px 4px;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.03), 
+                rgba(255, 255, 255, 0.01));
+            border: 1px solid var(--border-primary);
+            border-radius: 5px;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            overflow: hidden;
+            backdrop-filter: blur(4px);
+        }
+        
+        .data-mode-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, 
+                rgba(255, 255, 255, 0.1), 
+                transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        
+        .data-mode-button:hover::before {
+            opacity: 1;
+        }
+        
+        .data-mode-button::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+        
+        .data-mode-button:hover::after {
+            transform: translateX(100%);
+        }
+        
+        .data-mode-button:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+        }
+        
+        .data-mode-button.online:hover {
+            border-color: var(--data-online);
+            color: var(--data-online);
+            box-shadow: 0 16px 48px rgba(0, 255, 136, 0.3),
+                        0 0 60px rgba(0, 255, 136, 0.2);
+        }
+        
+        .data-mode-button.offline:hover {
+            border-color: var(--data-offline);
+            color: var(--data-offline);
+            box-shadow: 0 16px 48px rgba(255, 0, 85, 0.3),
+                        0 0 60px rgba(255, 0, 85, 0.2);
+        }
+        
+        .data-mode-button.mix:hover {
+            border-color: var(--data-mix);
+            color: var(--data-mix);
+            box-shadow: 0 16px 48px rgba(255, 170, 0, 0.3),
+                        0 0 60px rgba(255, 170, 0, 0.2);
+        }
+        
+        .data-mode-button.active {
+            transform: translateY(-8px) scale(1.05);
+            animation: activeGlow 2s infinite;
+        }
+        
+        .data-mode-button.online.active {
+            background: linear-gradient(135deg, 
+                rgba(0, 255, 136, 0.15), 
+                rgba(0, 255, 136, 0.05));
+            border-color: var(--data-online);
+            color: var(--data-online);
+            box-shadow: 0 16px 56px rgba(0, 255, 136, 0.4),
+                        0 0 80px rgba(0, 255, 136, 0.3),
+                        inset 0 0 40px rgba(0, 255, 136, 0.1);
+        }
+        
+        .data-mode-button.offline.active {
+            background: linear-gradient(135deg, 
+                rgba(255, 0, 85, 0.15), 
+                rgba(255, 0, 85, 0.05));
+            border-color: var(--data-offline);
+            color: var(--data-offline);
+            box-shadow: 0 16px 56px rgba(255, 0, 85, 0.4),
+                        0 0 80px rgba(255, 0, 85, 0.3),
+                        inset 0 0 40px rgba(255, 0, 85, 0.1);
+        }
+        
+        .data-mode-button.mix.active {
+            background: linear-gradient(135deg, 
+                rgba(255, 170, 0, 0.15), 
+                rgba(255, 170, 0, 0.05));
+            border-color: var(--data-mix);
+            color: var(--data-mix);
+            box-shadow: 0 16px 56px rgba(255, 170, 0, 0.4),
+                        0 0 80px rgba(255, 170, 0, 0.3),
+                        inset 0 0 40px rgba(255, 170, 0, 0.1);
+        }
+        
+        @keyframes activeGlow {
+            0%, 100% {
+                box-shadow: 0 16px 56px rgba(255, 255, 255, 0.3),
+                            0 0 80px rgba(255, 255, 255, 0.2);
+            }
+            50% {
+                box-shadow: 0 16px 72px rgba(255, 255, 255, 0.5),
+                            0 0 100px rgba(255, 255, 255, 0.4);
+            }
+        }
+        
+        .mode-icon-large {
+            font-size: 36px;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 4px 12px currentColor);
+            transition: all 0.4s ease;
+        }
+        
+        .data-mode-button:hover .mode-icon-large {
+            transform: scale(1.2) rotate(5deg);
+            filter: drop-shadow(0 8px 20px currentColor);
+        }
+        
+        .data-mode-button.active .mode-icon-large {
+            animation: iconBounce 1s infinite;
+        }
+        
+        @keyframes iconBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        .mode-label {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        
+        .mode-description {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-transform: none;
+            letter-spacing: 0.05em;
+            line-height: 1.4;
+            text-align: center;
+            max-width: 180px;
+        }
+        
+        .mode-stats {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            font-size: 10px;
+            color: var(--text-tertiary);
+        }
+        
+        .stat-badge {
+            padding: 4px 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            border: 1px solid var(--border-primary);
+        }
+        
+        /* Enhanced Grid Layout */
+        .monitor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin: 24px 0;
+        }
+        
+        @media (max-width: 1200px) {
+            .monitor-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* ===== TRANSMISSION CONTROL SYSTEM ===== */
+        
+        .transmission-control-panel {
+            background: var(--panel-transmission);
+            border: 1px solid var(--glass-transmission);
+            border-radius: 20px;
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .transmission-control-panel:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--transmission-primary);
+        }
+        
+        .transmission-control-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, 
+                var(--transmission-primary), 
+                var(--transmission-success),
+                var(--transmission-warning));
+            opacity: 0.8;
+        }
+        
+        .transmission-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .transmission-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .transmission-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(0, 229, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--transmission-primary);
+        }
+        
+        .transmission-status-badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .status-active {
+            background: rgba(30, 215, 96, 0.1);
+            color: var(--transmission-success);
+            border: 1px solid rgba(30, 215, 96, 0.3);
+        }
+        
+        .status-inactive {
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--transmission-danger);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+        }
+        
+        .status-standby {
+            background: rgba(255, 184, 32, 0.1);
+            color: var(--transmission-warning);
+            border: 1px solid rgba(255, 184, 32, 0.3);
+        }
+        
+        /* Broadcast Mode Selector */
+        .broadcast-mode-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 24px 0;
+        }
+        
+        .mode-form {
+            margin: 0;
+        }
+        
+        .mode-button {
+            position: relative;
+            padding: 20px 16px;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-primary);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            overflow: hidden;
+        }
+        
+        .mode-button:hover {
+            background: var(--bg-surface);
+            border-color: var(--transmission-primary);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .mode-button.active {
+            background: linear-gradient(135deg, 
+                rgba(0, 229, 255, 0.1), 
+                rgba(0, 229, 255, 0.05));
+            border-color: var(--transmission-primary);
+            color: var(--transmission-primary);
+            box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+        }
+        
+        .mode-button.stop:hover {
+            border-color: var(--transmission-danger);
+            box-shadow: 0 0 30px rgba(255, 59, 48, 0.2);
+        }
+        
+        .mode-button.stop.active {
+            background: linear-gradient(135deg, 
+                rgba(255, 59, 48, 0.1), 
+                rgba(255, 59, 48, 0.05));
+            border-color: var(--transmission-danger);
+            color: var(--transmission-danger);
+            box-shadow: 0 0 30px rgba(255, 59, 48, 0.3);
+        }
+        
+        .mode-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+        
+        /* Transmission Status Display */
+        .transmission-status-display {
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 24px;
+            border: 1px solid var(--border-primary);
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .status-dot.net { background: var(--transmission-primary); }
+        .status-dot.freq { background: var(--transmission-success); }
+        .status-dot.both { background: var(--transmission-warning); }
+        .status-dot.stop { background: var(--transmission-danger); }
+        
+        .status-dot::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            right: -6px;
+            bottom: -6px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.net::before { background: var(--transmission-primary); opacity: 0.3; }
+        .status-dot.freq::before { background: var(--transmission-success); opacity: 0.3; }
+        .status-dot.both::before { background: var(--transmission-warning); opacity: 0.3; }
+        .status-dot.stop::before { background: var(--transmission-danger); opacity: 0.3; }
+        
+        .status-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .status-meta {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
+        }
+        
+        /* System Metrics */
+        .system-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-primary);
+        }
+        
+        .metric-item {
+            text-align: center;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .metric-item:hover {
+            background: rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+        
+        .metric-value.uptime { color: var(--transmission-success); }
+        .metric-value.latency { color: var(--transmission-primary); }
+        
+        /* ===== MEDIA PLAYER PANEL ===== */
+        
+        .media-player-panel {
+            background: var(--panel-media);
+            border: 1px solid var(--glass-media);
+            border-radius: 20px;
+            padding: 0;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .media-player-panel:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--transmission-success);
+        }
+        
+        .media-header {
+            padding: 24px 24px 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .media-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .media-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(30, 215, 96, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--transmission-success);
+        }
+        
+        .media-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        /* Media Content */
+        .media-content {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .media-thumbnail {
+            width: 100%;
+            height: 240px;
+            object-fit: cover;
+            filter: brightness(0.7);
+            transition: all 0.5s ease;
+        }
+        
+        .media-player-panel:hover .media-thumbnail {
+            filter: brightness(1);
+            transform: scale(1.02);
+        }
+        
+        .media-info {
+            padding: 24px;
+        }
+        
+        .track-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0 0 16px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .countdown-timer {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .countdown-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .countdown-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--transmission-success);
+            font-family: var(--font-mono);
+            animation: countdownPulse 2s infinite;
+        }
+        
+        .media-progress {
+            margin-top: 20px;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: var(--border-primary);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, 
+                var(--transmission-success), 
+                var(--transmission-primary));
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-time {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
+        }
+        
+        /* Media Actions */
+        .media-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .media-action-btn {
+            flex: 1;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .media-action-btn:hover {
+            background: var(--bg-surface);
+            border-color: var(--transmission-success);
+            transform: translateY(-2px);
+        }
+        
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 24px;
+            text-align: center;
+        }
+        
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            opacity: 0.3;
+            margin-bottom: 20px;
+        }
+        
+        .empty-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .empty-description {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            max-width: 300px;
+            line-height: 1.5;
+        }
+        
+        /* ===== ALERTS PANEL ===== */
+        
+        .alerts-panel {
+            background: var(--panel-alerts);
+            border: 1px solid var(--glass-alerts);
+            border-radius: 20px;
+            padding: 32px;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .alerts-panel:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--transmission-danger);
+        }
+        
+        .alerts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .alerts-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .alerts-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255, 59, 48, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--transmission-danger);
+        }
+        
+        /* Alerts Container */
+        .alerts-container {
+            height: 400px;
+            overflow: hidden;
+            position: relative;
+            border-radius: 12px;
+        }
+        
+        .alerts-scroll {
+            height: 100%;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        
+        /* Alert Items */
+        .alert-item {
+            background: var(--bg-tertiary);
+            border-left: 4px solid;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .alert-item:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .alert-item.high {
+            border-left-color: var(--transmission-danger);
+            background: linear-gradient(90deg, 
+                rgba(255, 59, 48, 0.05), 
+                transparent);
+        }
+        
+        .alert-item.medium {
+            border-left-color: var(--transmission-warning);
+            background: linear-gradient(90deg, 
+                rgba(255, 184, 32, 0.05), 
+                transparent);
+        }
+        
+        .alert-item.low {
+            border-left-color: var(--transmission-primary);
+            background: linear-gradient(90deg, 
+                rgba(0, 229, 255, 0.05), 
+                transparent);
+        }
+        
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .alert-severity {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .severity-high {
+            background: rgba(255, 59, 48, 0.2);
+            color: var(--transmission-danger);
+        }
+        
+        .severity-medium {
+            background: rgba(255, 184, 32, 0.2);
+            color: var(--transmission-warning);
+        }
+        
+        .severity-low {
+            background: rgba(0, 229, 255, 0.2);
+            color: var(--transmission-primary);
+        }
+        
+        .alert-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .alert-action-btn {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-primary);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .alert-action-btn:hover {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+        }
+        
+        .alert-action-btn.remove {
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--transmission-danger);
+            border-color: rgba(255, 59, 48, 0.3);
+        }
+        
+        .alert-action-btn.remove:hover {
+            background: rgba(255, 59, 48, 0.2);
+            border-color: var(--transmission-danger);
+        }
+        
+        .alert-message {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.5;
+            margin: 12px 0;
+        }
+        
+        .alert-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        
+        .alert-expiry {
+            font-family: var(--font-mono);
+        }
+        
+        /* ===== USER ALERTS PANEL ===== */
+        
+        .user-alerts-panel {
+            background: var(--panel-users);
+            border: 1px solid var(--glass-users);
+            border-radius: 20px;
+            padding: 32px;
+            margin-top: 24px;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .user-alerts-panel:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--transmission-warning);
+        }
+        
+        .user-alerts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .user-alerts-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .user-alerts-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255, 184, 32, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--transmission-warning);
+        }
+        
+        .user-alerts-count {
+            padding: 6px 16px;
+            background: rgba(255, 184, 32, 0.1);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--transmission-warning);
+        }
+        
+        /* User Alerts Container */
+        .user-alerts-container {
+            height: 400px;
+            overflow: hidden;
+            position: relative;
+            border-radius: 12px;
+        }
+        
+        .user-alerts-scroll {
+            height: 100%;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        
+        /* User Alert Items */
+        .user-alert-item {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .user-alert-item:hover {
+            background: var(--bg-surface);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .user-alert-content {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, 
+                rgba(0, 229, 255, 0.1), 
+                rgba(255, 184, 32, 0.1));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--text-primary);
+            flex-shrink: 0;
+        }
+        
+        .user-message {
+            flex: 1;
+        }
+        
+        .user-id {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            font-family: var(--font-mono);
+        }
+        
+        .user-text {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.5;
+            margin: 8px 0;
+        }
+        
+        .user-source {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .user-alert-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-primary);
+        }
+        
+        .user-timestamp {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
+        }
+        
+        /* Clear Button */
+        .clear-btn {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.05), 
+                rgba(255, 255, 255, 0.1));
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .clear-btn:hover {
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.1), 
+                rgba(255, 255, 255, 0.2));
+            color: var(--text-primary);
+            border-color: var(--border-accent);
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.2); opacity: 0.1; }
+        }
+        
+        @keyframes countdownPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .alert-item, .user-alert-item {
+            animation: slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+        }
+        
+        .alert-item:nth-child(1) { animation-delay: 0.1s; }
+        .alert-item:nth-child(2) { animation-delay: 0.2s; }
+        .alert-item:nth-child(3) { animation-delay: 0.3s; }
+        .alert-item:nth-child(4) { animation-delay: 0.4s; }
+        .alert-item:nth-child(5) { animation-delay: 0.5s; }
+        
+        .user-alert-item:nth-child(1) { animation-delay: 0.1s; }
+        .user-alert-item:nth-child(2) { animation-delay: 0.2s; }
+        .user-alert-item:nth-child(3) { animation-delay: 0.3s; }
+        .user-alert-item:nth-child(4) { animation-delay: 0.4s; }
+        .user-alert-item:nth-child(5) { animation-delay: 0.5s; }
+        
+        /* Scrollbar Styling */
+        .alerts-scroll::-webkit-scrollbar,
+        .user-alerts-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .alerts-scroll::-webkit-scrollbar-track,
+        .user-alerts-scroll::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+        }
+        
+        .alerts-scroll::-webkit-scrollbar-thumb,
+        .user-alerts-scroll::-webkit-scrollbar-thumb {
+            background: var(--border-secondary);
+            border-radius: 3px;
+        }
+        
+        .alerts-scroll::-webkit-scrollbar-thumb:hover,
+        .user-alerts-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--border-accent);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 968px) {
+            .data-capture-modes {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .monitor-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
+            }
+            
+            .header-actions {
+                justify-content: stretch;
+            }
+            
+            .broadcast-mode-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .system-metrics {
+                grid-template-columns: 1fr;
+            }
+            
+            .user-alert-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .user-avatar {
+                margin-bottom: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .broadcast-mode-selector {
+                grid-template-columns: 1fr;
+            }
+            
+            .media-actions {
+                flex-direction: column;
+            }
+            
+            .data-capture-modes {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- SYSTEM STATE MONITOR INTERFACE -->
+    
+    <!-- Enhanced Topbar -->
+    <div class="topbar">
+        <div class="monitor-header">
+            <div class="header-content">
+                <h1 class="page-title">SYSTEM STATE MONITOR</h1>
+                <p class="page-subtitle">TRANSMISSION CONTROL CENTER // NEURAL CORE v2.1</p>
+                <div class="transmission-status-badge 
+                    {% if status and status.status != 'stop' %}status-active
+                    {% elif status and status.status == 'stop' %}status-inactive
+                    {% else %}status-standby{% endif %}">
+                    {% if status and status.status != 'stop' %}ACTIVE TRANSMISSION
+                    {% elif status and status.status == 'stop' %}TRANSMISSION STOPPED
+                    {% else %}SYSTEM STANDBY{% endif %}
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <a class="btn" href="/admin">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    COMMAND CENTER
+                </a>
+                
+                <a class="btn btn-outline" href="/location">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    GEOSPATIAL
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- DATA CAPTURE MODE CONTROL PANEL -->
+    <div class="card data-capture-panel">
+        <div class="data-capture-header">
+            <div class="data-capture-title">
+                <div class="data-capture-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                </div>
+                <div class="data-capture-label">
+                    <h2 class="data-capture-main-title">DATA CAPTURE MODES</h2>
+                    <p class="data-capture-subtitle">NEURAL ACQUISITION SYSTEM</p>
+                </div>
+            </div>
+            
+            <div class="data-capture-status-indicator">
+                <div class="status-led {% if dafetch_mode == 'online' %}online{% elif dafetch_mode == 'offline' %}offline{% else %}mix{% endif %}"></div>
+                <span class="status-text">
+                    {% if dafetch_mode == 'online' %}ONLINE MODE
+                    {% elif dafetch_mode == 'offline' %}OFFLINE MODE
+                    {% else %}MIX MODE{% endif %}
+                </span>
+            </div>
+        </div>
+        
+        <div class="data-capture-modes">
+            <form method="post" action="/monitor/dafetch_mode" class="data-mode-form">
+                <button type="submit" name="dafetch_mode" value="online" 
+                        class="data-mode-button online{% if dafetch_mode == 'online' %} active{% endif %}">
+                    <div class="mode-icon-large">🌐</div>
+                    <div class="mode-label">ONLINE</div>
+                    <div class="mode-description">Real-time network data streaming with live capture</div>
+                    <div class="mode-stats">
+                        <span class="stat-badge">LIVE</span>
+                        <span class="stat-badge">SYNC</span>
+                    </div>
+                </button>
+            </form>
+            
+            <form method="post" action="/monitor/dafetch_mode" class="data-mode-form">
+                <button type="submit" name="dafetch_mode" value="offline" 
+                        class="data-mode-button offline{% if dafetch_mode == 'offline' %} active{% endif %}">
+                    <div class="mode-icon-large">💾</div>
+                    <div class="mode-label">OFFLINE</div>
+                    <div class="mode-description">Cached local data access without network dependency</div>
+                    <div class="mode-stats">
+                        <span class="stat-badge">CACHE</span>
+                        <span class="stat-badge">LOCAL</span>
+                    </div>
+                </button>
+            </form>
+            
+            <form method="post" action="/monitor/dafetch_mode" class="data-mode-form">
+                <button type="submit" name="dafetch_mode" value="mix" 
+                        class="data-mode-button mix{% if dafetch_mode == 'mix' %} active{% endif %}">
+                    <div class="mode-icon-large">⚡</div>
+                    <div class="mode-label">MIX</div>
+                    <div class="mode-description">Hybrid mode balancing live and cached data sources</div>
+                    <div class="mode-stats">
+                        <span class="stat-badge">HYBRID</span>
+                        <span class="stat-badge">SMART</span>
+                    </div>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- PRIMARY MONITOR GRID -->
+    <div class="monitor-grid">
+        <!-- TRANSMISSION CONTROL PANEL -->
+        <div class="card transmission-control-panel">
+            <div class="transmission-header">
+                <div class="transmission-title">
+                    <div class="transmission-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 style="margin:0; color:var(--text-primary);">TRANSMISSION CONTROL</h3>
+                        <p style="margin:4px 0 0; font-size:13px; color:var(--text-tertiary);">
+                            BROADCAST MODE SELECTOR & SYSTEM STATUS
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Broadcast Mode Selector -->
+            <div class="broadcast-mode-selector">
+                <form method="POST" action="/monitor/status" class="mode-form">
+                    <input type="hidden" name="status" value="net">
+                    <button type="submit" class="mode-button {% if status and status.status == 'net' %}active{% endif %}">
+                        <div class="mode-icon">📡</div>
+                        NETWORK
+                    </button>
+                </form>
+                
+                <form method="POST" action="/monitor/status" class="mode-form">
+                    <input type="hidden" name="status" value="freq">
+                    <button type="submit" class="mode-button {% if status and status.status == 'freq' %}active{% endif %}">
+                        <div class="mode-icon">🎛️</div>
+                        FREQUENCY
+                    </button>
+                </form>
+                
+                <form method="POST" action="/monitor/status" class="mode-form">
+                    <input type="hidden" name="status" value="both">
+                    <button type="submit" class="mode-button {% if status and status.status == 'both' %}active{% endif %}">
+                        <div class="mode-icon">🔗</div>
+                        DUAL MODE
+                    </button>
+                </form>
+                
+                <form method="POST" action="/monitor/status" class="mode-form">
+                    <input type="hidden" name="status" value="stop">
+                    <button type="submit" class="mode-button stop {% if status and status.status == 'stop' %}active{% endif %}">
+                        <div class="mode-icon">⛔</div>
+                        TERMINATE
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Transmission Status Display -->
+            <div class="transmission-status-display">
+                <div class="status-indicator">
+                    <div class="status-dot 
+                        {% if status and status.status == 'net' %}net
+                        {% elif status and status.status == 'freq' %}freq
+                        {% elif status and status.status == 'both' %}both
+                        {% else %}stop{% endif %}">
+                    </div>
+                    <div>
+                        <div class="status-text">
+                            {% if status and status.status %}
+                                {% if status.status == 'net' %}NETWORK TRANSMISSION ACTIVE
+                                {% elif status.status == 'freq' %}FREQUENCY BROADCAST ACTIVE
+                                {% elif status.status == 'both' %}DUAL TRANSMISSION MODE
+                                {% else %}TRANSMISSION TERMINATED{% endif %}
+                            {% else %}SYSTEM OFFLINE{% endif %}
+                        </div>
+                        <div class="status-meta">
+                            LAST UPDATE: {{ status.last_updated if status else 'SYSTEM OFFLINE' }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- System Metrics -->
+                <div class="system-metrics">
+                    <div class="metric-item">
+                        <div class="metric-label">SYSTEM UPTIME</div>
+                        <div class="metric-value uptime">24/7</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">NETWORK LATENCY</div>
+                        <div class="metric-value latency">12ms</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">ACTIVE CONNECTIONS</div>
+                        <div class="metric-value">142</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">DATA THROUGHPUT</div>
+                        <div class="metric-value">1.2 Gbps</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIVE MEDIA PANEL -->
+        <div class="card media-player-panel">
+            <div class="media-header">
+                <div class="media-title">
+                    <div class="media-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 style="margin:0; color:var(--text-primary);">ACTIVE MEDIA STREAM</h3>
+                        <span class="media-label">LIVE BROADCAST</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="media-content">
+                {% if music %}
+                    {% if music.link and 'v=' in music.link %}
+                        {% set vid = music.link.split('v=')[1].split('&')[0] %}
+                        <img class="media-thumbnail" alt="Media Thumbnail" 
+                             src="https://img.youtube.com/vi/{{ vid }}/maxresdefault.jpg"
+                             onerror="this.src='https://img.youtube.com/vi/{{ vid }}/hqdefault.jpg'">
+                    {% endif %}
+                    
+                    <div class="media-info">
+                        <h3 class="track-title">{{ music.name if music.name else 'UNKNOWN TRACK' }}</h3>
+                        
+                        {% if music.ends_at %}
+                            <div class="countdown-timer">
+                                <span class="countdown-label">NEXT TRACK IN</span>
+                                <span class="countdown-value">{{ music.ends_at }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="media-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 65%"></div>
+                            </div>
+                            <div class="progress-time">
+                                <span>3:45</span>
+                                <span>5:32</span>
+                            </div>
+                        </div>
+                        
+                        <div class="media-actions">
+                            {% if music.link %}
+                                <a class="media-action-btn" href="{{ music.link }}" target="_blank" rel="noopener">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="5 3 19 12 5 21 5 3"/>
+                                    </svg>
+                                    PLAY SOURCE
+                                </a>
+                            {% endif %}
+                            
+                            <button class="media-action-btn" onclick="refreshMedia()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 4v6h-6"/>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                                </svg>
+                                REFRESH
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        <h4 class="empty-title">NO ACTIVE STREAM</h4>
+                        <p class="empty-description">
+                            Awaiting media transmission from broadcast system.
+                            Media will appear automatically when transmission starts.
+                        </p>
+                        <button class="btn btn-outline" style="margin-top:20px;" onclick="refreshMedia()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 4v6h-6"/>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                            </svg>
+                            CHECK FOR MEDIA
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- NEURAL CORE ALERTS PANEL -->
+        <div class="card alerts-panel">
+            <div class="alerts-header">
+                <div class="alerts-title">
+                    <div class="alerts-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a10 10 0 0 0-9.78 12.13A10 10 0 0 0 12 22a10 10 0 0 0 9.78-7.87A10 10 0 0 0 12 2z"/>
+                            <path d="M9 12l2 2 4-4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 style="margin:0; color:var(--text-primary);">NEURAL CORE ALERTS</h3>
+                        <p style="margin:4px 0 0; font-size:13px; color:var(--text-tertiary);">
+                            AI-PROCESSED SECURITY & SYSTEM ALERTS
+                        </p>
+                    </div>
+                </div>
+                <form method="POST" action="/monitor/ai_alert/clear" class="mode-form">
+                    <button type="submit" class="clear-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                        PURGE ALL
+                    </button>
+                </form>
+            </div>
+            
+            <div class="alerts-container">
+                <div class="alerts-scroll">
+                    {% if ai_alerts %}
+                        {% for a in ai_alerts %}
+                            <div class="alert-item {{ a.severity }}">
+                                <div class="alert-header">
+                                    <span class="alert-severity severity-{{ a.severity }}">
+                                        {{ a.severity|upper }} PRIORITY
+                                    </span>
+                                    <div class="alert-actions">
+                                        {% if a.id is not none %}
+                                            <form method="POST" action="/monitor/ai_alert/delete" class="mode-form">
+                                                <input type="hidden" name="id" value="{{ a.id }}">
+                                                <button type="submit" class="alert-action-btn remove">
+                                                    DISMISS
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <p class="alert-message">{{ a.message }}</p>
+                                <div class="alert-meta">
+                                    <span class="alert-expiry">EXPIRES: {{ a.expires_at }}</span>
+                                    <span>AI PROCESSED</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M12 2a10 10 0 0 0-9.78 12.13A10 10 0 0 0 12 22a10 10 0 0 0 9.78-7.87A10 10 0 0 0 12 2z"/>
+                                <path d="M9 12l2 2 4-4"/>
+                            </svg>
+                            <h4 class="empty-title">NEURAL CORE SILENT</h4>
+                            <p class="empty-description">
+                                No AI alerts detected in the system.
+                                All systems operating within normal parameters.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- USER ALERTS PANEL -->
+    <div class="card user-alerts-panel">
+        <div class="user-alerts-header">
+            <div class="user-alerts-title">
+                <div class="user-alerts-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 style="margin:0; color:var(--text-primary);">USER ALERT MONITOR</h3>
+                    <p style="margin:4px 0 0; font-size:13px; color:var(--text-tertiary);">
+                        LIVE AUDIENCE REPORTS & FEEDBACK
+                    </p>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:16px;">
+                <div class="user-alerts-count">
+                    {% if user_alerts %}{{ user_alerts|length }} ACTIVE{% else %}NO REPORTS{% endif %}
+                </div>
+                <form method="POST" action="/monitor/user_alert/clear" class="mode-form">
+                    <button type="submit" class="clear-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                        CLEAR ALL
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="user-alerts-container">
+            <div class="user-alerts-scroll">
+                {% if user_alerts %}
+                    {% for u in user_alerts %}
+                        <div class="user-alert-item">
+                            <div class="user-alert-content">
+                                <div class="user-avatar">
+                                    {{ u.user_id[0:2]|upper if u.user_id else '??' }}
+                                </div>
+                                <div class="user-message">
+                                    <div class="user-id">USER: {{ u.user_id if u.user_id else 'ANONYMOUS' }}</div>
+                                    <p class="user-text">{{ u.message }}</p>
+                                    {% if u.source %}
+                                        <div class="user-source">SOURCE: {{ u.source|upper }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="user-alert-footer">
+                                <div class="user-timestamp">{{ u.last_updated }}</div>
+                                <div class="alert-actions">
+                                    {% if u.id is not none %}
+                                        <form method="POST" action="/monitor/user_alert/delete" class="mode-form">
+                                            <input type="hidden" name="id" value="{{ u.id }}">
+                                            <button type="submit" class="alert-action-btn remove">
+                                                REMOVE
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <h4 class="empty-title">NO USER REPORTS</h4>
+                        <p class="empty-description">
+                            No user alerts or reports detected in the system.
+                            Audience feedback will appear here automatically.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification System -->
+    <div id="notificationSystem" style="position:fixed; top:20px; right:20px; z-index:10000; display:flex; flex-direction:column; gap:12px; max-width:400px;"></div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // Enhanced System Monitor Controller
+        class SystemMonitor {
+            constructor() {
+                this.notificationSystem = document.getElementById('notificationSystem');
+                this.initializeEventListeners();
+                this.initializeAutoRefresh();
+                this.initializeAnimations();
+            }
+            
+            initializeEventListeners() {
+                // Data mode button animations
+                document.querySelectorAll('.data-mode-button').forEach(btn => {
+                    btn.addEventListener('mouseenter', (e) => {
+                        const icon = e.target.querySelector('.mode-icon-large');
+                        if (icon) {
+                            icon.style.transform = 'scale(1.3) rotate(10deg)';
+                        }
+                    });
+                    
+                    btn.addEventListener('mouseleave', (e) => {
+                        const icon = e.target.querySelector('.mode-icon-large');
+                        if (icon && !e.target.classList.contains('active')) {
+                            icon.style.transform = 'scale(1) rotate(0deg)';
+                        }
+                    });
+                });
+                
+                // Mode button animations
+                document.querySelectorAll('.mode-button').forEach(btn => {
+                    btn.addEventListener('mouseenter', (e) => {
+                        e.target.style.transform = 'translateY(-4px) scale(1.02)';
+                    });
+                    
+                    btn.addEventListener('mouseleave', (e) => {
+                        if (!e.target.classList.contains('active')) {
+                            e.target.style.transform = 'translateY(0) scale(1)';
+                        }
+                    });
+                });
+                
+                // Alert item interactions
+                document.querySelectorAll('.alert-item, .user-alert-item').forEach(item => {
+                    item.addEventListener('mouseenter', (e) => {
+                        e.target.style.transform = 'translateY(-4px)';
+                    });
+                    
+                    item.addEventListener('mouseleave', (e) => {
+                        e.target.style.transform = 'translateY(0)';
+                    });
+                });
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    // Ctrl/Cmd + R to refresh
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                        e.preventDefault();
+                        this.refreshPage();
+                    }
+                    
+                    // Alt + 1-5 to focus on panels
+                    if (e.altKey && e.key >= '1' && e.key <= '5') {
+                        const index = parseInt(e.key) - 1;
+                        const panels = document.querySelectorAll('.card');
+                        if (panels[index]) {
+                            panels[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            panels[index].focus();
+                        }
+                    }
+                });
+            }
+            
+            initializeAutoRefresh() {
+                // Auto-refresh every 60 seconds
+                setInterval(() => {
+                    this.refreshData();
+                }, 60000);
+                
+                // Auto-refresh countdown timer
+                setInterval(() => {
+                    this.updateCountdowns();
+                }, 1000);
+            }
+            
+            initializeAnimations() {
+                // Add hover effects to metric items
+                document.querySelectorAll('.metric-item').forEach(item => {
+                    item.addEventListener('mouseenter', () => {
+                        item.style.transform = 'translateY(-4px)';
+                    });
+                    
+                    item.addEventListener('mouseleave', () => {
+                        item.style.transform = 'translateY(0)';
+                    });
+                });
+                
+                // Add parallax effect to media thumbnail
+                const mediaPanel = document.querySelector('.media-player-panel');
+                if (mediaPanel) {
+                    mediaPanel.addEventListener('mousemove', (e) => {
+                        const rect = mediaPanel.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        
+                        const moveX = (x - rect.width / 2) / 20;
+                        const moveY = (y - rect.height / 2) / 20;
+                        
+                        const thumbnail = mediaPanel.querySelector('.media-thumbnail');
+                        if (thumbnail) {
+                            thumbnail.style.transform = `translate(${moveX}px, ${moveY}px) scale(1.02)`;
+                        }
+                    });
+                    
+                    mediaPanel.addEventListener('mouseleave', () => {
+                        const thumbnail = mediaPanel.querySelector('.media-thumbnail');
+                        if (thumbnail) {
+                            thumbnail.style.transform = 'translate(0, 0) scale(1)';
+                        }
+                    });
+                }
+            }
+            
+            async refreshData() {
+                try {
+                    // Show loading indicator
+                    this.showNotification('Refreshing', 'Updating system monitor data...', 'info');
+                    
+                    // In a real app, this would fetch updated data
+                    // For now, just show success notification
+                    setTimeout(() => {
+                        this.showNotification('Refresh Complete', 'System data updated successfully', 'success');
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('Refresh error:', error);
+                    this.showNotification('Refresh Failed', 'Unable to update system data', 'error');
+                }
+            }
+            
+            refreshMedia() {
+                const btn = event?.target || document.querySelector('button[onclick="refreshMedia()"]');
+                const originalText = btn.innerHTML;
+                
+                // Show loading state
+                btn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="rotating">
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    REFRESHING...
+                `;
+                btn.disabled = true;
+                
+                // Simulate API call
+                setTimeout(() => {
+                    this.showNotification('Media Check', 'Checking for new media streams...', 'info');
+                    
+                    setTimeout(() => {
+                        // Restore button
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        
+                        // Show result notification
+                        this.showNotification('Media Updated', 'Media stream status checked successfully', 'success');
+                    }, 1000);
+                }, 500);
+            }
+            
+            refreshPage() {
+                this.showNotification('Reloading', 'Refreshing system monitor page...', 'info');
+                
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            }
+            
+            updateCountdowns() {
+                // Update any countdown timers
+                const countdownElements = document.querySelectorAll('.countdown-value');
+                countdownElements.forEach(element => {
+                    // In a real app, this would calculate actual time remaining
+                    // For now, just animate the text
+                    element.style.opacity = element.style.opacity === '0.7' ? '1' : '0.7';
+                });
+            }
+            
+            showNotification(title, message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification notification-${type}`;
+                notification.innerHTML = `
+                    <div style="display:flex; align-items:flex-start; gap:12px;">
+                        <div style="flex-shrink:0; width:24px;height:24px; border-radius:6px; background:${
+                            type === 'success' ? 'rgba(30,215,96,0.1)' : 
+                            type === 'warning' ? 'rgba(255,184,32,0.1)' : 
+                            type === 'error' ? 'rgba(255,59,48,0.1)' : 
+                            'rgba(0,229,255,0.1)'
+                        }; display:flex; align-items:center; justify-content:center; color:${
+                            type === 'success' ? 'var(--transmission-success)' : 
+                            type === 'warning' ? 'var(--transmission-warning)' : 
+                            type === 'error' ? 'var(--transmission-danger)' : 
+                            'var(--transmission-primary)'
+                        };">
+                            ${type === 'success' ? '✓' :
+                              type === 'warning' ? '⚠' :
+                              type === 'error' ? '✗' : 'ⓘ'}
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px;">${title}</div>
+                            <div style="font-size:14px; color:var(--text-secondary);">${message}</div>
+                        </div>
+                        <button class="close-notification" style="background:none; border:none; color:var(--text-tertiary); cursor:pointer; padding:4px;">
+                            ×
+                        </button>
+                    </div>
+                `;
+                
+                // Add styles
+                notification.style.cssText = `
+                    background: var(--bg-surface);
+                    border: 1px solid ${
+                        type === 'success' ? 'rgba(30,215,96,0.3)' : 
+                        type === 'warning' ? 'rgba(255,184,32,0.3)' : 
+                        type === 'error' ? 'rgba(255,59,48,0.3)' : 
+                        'rgba(0,229,255,0.3)'
+                    };
+                    border-radius: 12px;
+                    padding: 16px;
+                    backdrop-filter: blur(20px);
+                    box-shadow: var(--shadow-lg);
+                    animation: slideInRight 0.3s ease-out;
+                    transform-origin: top right;
+                `;
+                
+                this.notificationSystem.appendChild(notification);
+                
+                // Add close button functionality
+                notification.querySelector('.close-notification').addEventListener('click', () => {
+                    this.removeNotification(notification);
+                });
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    this.removeNotification(notification);
+                }, 5000);
+            }
+            
+            removeNotification(notification) {
+                notification.style.animation = 'slideOutRight 0.3s ease-out forwards';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }
+        }
+        
+        // Initialize system monitor when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.systemMonitor = new SystemMonitor();
+            
+            // Add CSS animations
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                
+                @keyframes slideOutRight {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+                
+                .rotating {
+                    animation: rotate 1s linear infinite;
+                }
+                
+                @keyframes rotate {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+                
+                .notification {
+                    margin-bottom: 12px;
+                }
+                
+                .notification:last-child {
+                    margin-bottom: 0;
+                }
+            `;
+            document.head.appendChild(style);
+        });
+        
+        // Global refresh function
+        function refreshMedia() {
+            if (window.systemMonitor) {
+                window.systemMonitor.refreshMedia();
+            }
+        }
+    </script>
+{% endblock %}

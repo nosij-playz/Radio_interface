@@ -1,0 +1,1877 @@
+{% extends "base.html" %}
+
+{% block title %}GEOSPATIAL MONITOR // NEURAL CORE{% endblock %}
+
+{% block head_extra %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+    
+    <style>
+        :root {
+            /* Geospatial Color System */
+            --geospatial-primary: #00e5ff;
+            --geospatial-secondary: #00b8d9;
+            --geospatial-tertiary: #0095b3;
+            --geospatial-surface: rgba(0, 229, 255, 0.05);
+            --geospatial-border: rgba(0, 229, 255, 0.2);
+            
+            /* Environmental Color System */
+            --environmental-primary: #ffb820;
+            --environmental-secondary: #ff9100;
+            --environmental-surface: rgba(255, 184, 32, 0.05);
+            --environmental-border: rgba(255, 184, 32, 0.2);
+            
+            /* Data Visualization */
+            --data-quality-good: #1ed760;
+            --data-quality-moderate: #ffb820;
+            --data-quality-poor: #ff3b30;
+            
+            /* Map Enhancements */
+            --map-grid-color: rgba(0, 229, 255, 0.1);
+            --map-crosshair-color: rgba(255, 59, 48, 0.8);
+            --map-selection-color: rgba(0, 229, 255, 0.3);
+        }
+        
+        /* ===== GEOSPATIAL INTERFACE STYLES ===== */
+        
+        /* Enhanced Topbar */
+        .topbar {
+            background: linear-gradient(135deg, var(--geospatial-surface), transparent);
+            border: 1px solid var(--geospatial-border);
+            border-radius: 16px;
+            padding: 24px 32px;
+            margin-bottom: 32px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 229, 255, 0.1);
+        }
+        
+        .geospatial-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+        }
+        
+        .header-content {
+            flex: 1;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--geospatial-primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            letter-spacing: 0.05em;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        /* Enhanced Grid Layout */
+        .geospatial-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 24px;
+            margin: 24px 0;
+        }
+        
+        @media (max-width: 1200px) {
+            .geospatial-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* ===== TACTICAL MAP SYSTEM ===== */
+        
+        .tactical-map-container {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-xl);
+            border: 2px solid var(--geospatial-border);
+            height: 600px;
+            background: var(--bg-surface);
+        }
+        
+        #geospatialMap {
+            height: 100%;
+            width: 100%;
+            z-index: 1;
+        }
+        
+        .map-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        .map-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(var(--map-grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--map-grid-color) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.2;
+        }
+        
+        .map-crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--map-crosshair-color);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        .map-crosshair::before,
+        .map-crosshair::after {
+            content: '';
+            position: absolute;
+            background: var(--map-crosshair-color);
+        }
+        
+        .map-crosshair::before {
+            top: 50%;
+            left: -20px;
+            right: -20px;
+            height: 1px;
+            transform: translateY(-50%);
+        }
+        
+        .map-crosshair::after {
+            left: 50%;
+            top: -20px;
+            bottom: -20px;
+            width: 1px;
+            transform: translateX(-50%);
+        }
+        
+        .map-coordinates-panel {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            background: var(--glass-card-bg);
+            backdrop-filter: blur(20px);
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--geospatial-border);
+            z-index: 3;
+            pointer-events: auto;
+            min-width: 280px;
+        }
+        
+        .coordinates-display {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .coordinate-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .coordinate-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-family: var(--font-mono);
+        }
+        
+        .coordinate-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--geospatial-primary);
+            font-family: var(--font-mono);
+            letter-spacing: 0.05em;
+        }
+        
+        /* Map Controls */
+        .map-controls {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 3;
+        }
+        
+        .map-control-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--glass-card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+        }
+        
+        .map-control-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--geospatial-primary);
+            transform: scale(1.05);
+            box-shadow: var(--shadow-md);
+        }
+        
+        /* ===== GEOSPATIAL CONTROLS PANEL ===== */
+        
+        .geospatial-controls-panel {
+            background: var(--glass-card-bg);
+            border: 1px solid var(--geospatial-border);
+            border-radius: 20px;
+            padding: 32px;
+            backdrop-filter: blur(10px);
+            margin-top: 24px;
+        }
+        
+        .search-system {
+            margin-bottom: 24px;
+        }
+        
+        .search-container {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+        }
+        
+        .search-input {
+            padding: 14px 16px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: var(--font-headline);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--geospatial-primary);
+            box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.1);
+        }
+        
+        .search-btn {
+            padding: 14px 24px;
+            background: linear-gradient(135deg, 
+                rgba(0, 229, 255, 0.1), 
+                rgba(0, 229, 255, 0.2));
+            border: 1px solid var(--geospatial-border);
+            border-radius: 12px;
+            color: var(--geospatial-primary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        
+        .search-btn:hover {
+            background: linear-gradient(135deg, 
+                rgba(0, 229, 255, 0.2), 
+                rgba(0, 229, 255, 0.3));
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(0, 229, 255, 0.2);
+        }
+        
+        /* Position Data Display */
+        .position-data-display {
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            padding: 24px;
+            margin: 24px 0;
+            border: 1px solid var(--border-primary);
+        }
+        
+        .position-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .position-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .position-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(30, 215, 96, 0.1);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--broadcast-green);
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--broadcast-green);
+            position: relative;
+        }
+        
+        .status-dot::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 50%;
+            background: var(--broadcast-green);
+            animation: pulse 2s infinite;
+            opacity: 0.4;
+        }
+        
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        
+        .data-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .data-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 500;
+        }
+        
+        .data-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            letter-spacing: 0.05em;
+        }
+        
+        .data-value.highlight {
+            color: var(--geospatial-primary);
+        }
+        
+        /* Save Position Form */
+        .save-position-form {
+            margin-top: 24px;
+        }
+        
+        .save-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, 
+                rgba(30, 215, 96, 0.1), 
+                rgba(30, 215, 96, 0.2));
+            border: 1px solid rgba(30, 215, 96, 0.3);
+            border-radius: 12px;
+            color: var(--broadcast-green);
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .save-btn:hover {
+            background: linear-gradient(135deg, 
+                rgba(30, 215, 96, 0.2), 
+                rgba(30, 215, 96, 0.3));
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(30, 215, 96, 0.3);
+        }
+        
+        .save-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* ===== ENVIRONMENTAL MONITOR PANEL ===== */
+        
+        .environmental-monitor-panel {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .environmental-header {
+            padding: 24px;
+            background: linear-gradient(135deg, var(--environmental-surface), transparent);
+            border-bottom: 1px solid var(--environmental-border);
+            border-radius: 16px 16px 0 0;
+        }
+        
+        .environmental-title {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .environmental-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(255, 184, 32, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--environmental-primary);
+        }
+        
+        .title-content h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .title-content .muted {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
+            letter-spacing: 0.05em;
+        }
+        
+        .environmental-content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        
+        /* Weather Conditions */
+        .weather-conditions {
+            background: linear-gradient(135deg, 
+                rgba(255, 184, 32, 0.05), 
+                rgba(255, 184, 32, 0.02));
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--environmental-border);
+        }
+        
+        .weather-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+        
+        .weather-location {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0 0 8px 0;
+        }
+        
+        .weather-timestamp {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
+            letter-spacing: 0.05em;
+        }
+        
+        .temperature-display {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .temperature-main {
+            font-size: 48px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--geospatial-primary), var(--environmental-primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            line-height: 1;
+        }
+        
+        .temperature-feels {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 12px 20px;
+        }
+        
+        .feels-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 4px;
+        }
+        
+        .feels-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .weather-icon-container {
+            position: relative;
+        }
+        
+        .weather-icon {
+            width: 80px;
+            height: 80px;
+            filter: drop-shadow(0 0 20px rgba(255, 184, 32, 0.3));
+            animation: weatherFloat 4s ease-in-out infinite;
+        }
+        
+        @keyframes weatherFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        /* Environmental Metrics */
+        .environmental-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+        
+        .metric-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            background: var(--bg-surface);
+            border-color: var(--geospatial-border);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .metric-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .metric-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .metric-humidity .metric-icon { background: rgba(0, 229, 255, 0.1); color: var(--geospatial-primary); }
+        .metric-pressure .metric-icon { background: rgba(255, 184, 32, 0.1); color: var(--environmental-primary); }
+        .metric-wind .metric-icon { background: rgba(30, 215, 96, 0.1); color: var(--broadcast-green); }
+        .metric-visibility .metric-icon { background: rgba(255, 255, 255, 0.1); color: var(--text-primary); }
+        
+        .metric-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+        
+        .metric-unit {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            margin-left: 4px;
+        }
+        
+        /* Additional Weather Data */
+        .weather-details {
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .detail-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+        
+        /* Air Quality */
+        .air-quality-panel {
+            background: linear-gradient(135deg, 
+                rgba(0, 229, 255, 0.05), 
+                rgba(0, 229, 255, 0.02));
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+            border: 1px solid var(--geospatial-border);
+        }
+        
+        .aqi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .aqi-display {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .aqi-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--geospatial-primary);
+            line-height: 1;
+        }
+        
+        .aqi-info {
+            flex: 1;
+        }
+        
+        .aqi-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 4px;
+        }
+        
+        .aqi-description {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .aqi-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .aqi-status.good { background: rgba(30, 215, 96, 0.1); color: var(--broadcast-green); }
+        .aqi-status.moderate { background: rgba(255, 184, 32, 0.1); color: var(--environmental-primary); }
+        .aqi-status.poor { background: rgba(255, 59, 48, 0.1); color: var(--accent-danger); }
+        
+        .pollutants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .pollutant-item {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        
+        .pollutant-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 4px;
+        }
+        
+        .pollutant-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+        
+        .pollutant-unit {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-left: 4px;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 24px;
+            text-align: center;
+        }
+        
+        .empty-state-icon {
+            width: 80px;
+            height: 80px;
+            opacity: 0.3;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .empty-state-description {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            max-width: 300px;
+            line-height: 1.5;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .geospatial-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
+            }
+            
+            .header-actions {
+                justify-content: stretch;
+            }
+            
+            .search-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .data-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .environmental-metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .temperature-display {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .map-controls {
+                top: 16px;
+                right: 16px;
+            }
+            
+            .map-coordinates-panel {
+                left: 16px;
+                bottom: 16px;
+                right: 16px;
+                min-width: auto;
+            }
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(1.2); opacity: 0.2; }
+        }
+        
+        @keyframes coordinateUpdate {
+            0% { color: var(--text-primary); }
+            50% { color: var(--broadcast-green); }
+            100% { color: var(--text-primary); }
+        }
+        
+        .coordinate-update {
+            animation: coordinateUpdate 0.5s ease-out;
+        }
+        
+        /* Custom Map Styles */
+        .leaflet-container {
+            font-family: var(--font-headline);
+        }
+        
+        .leaflet-control-geocoder {
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .leaflet-control-geocoder-form input {
+            font-family: var(--font-headline);
+            font-size: 14px;
+        }
+        
+        .custom-marker {
+            background: var(--geospatial-primary);
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+            animation: markerPulse 2s infinite;
+        }
+        
+        @keyframes markerPulse {
+            0%, 100% { 
+                box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.4); 
+            }
+            70% { 
+                box-shadow: 0 0 0 10px rgba(0, 229, 255, 0); 
+            }
+            100% { 
+                box-shadow: 0 0 0 0 rgba(0, 229, 255, 0); 
+            }
+        }
+        
+        /* Notification System */
+        .notification-system {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 400px;
+        }
+        
+        .notification {
+            padding: 16px 20px;
+            background: var(--bg-surface);
+            border: 1px solid;
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-xl);
+            animation: slideInRight 0.3s ease-out;
+            transform-origin: top right;
+        }
+        
+        .notification.success {
+            border-color: rgba(30, 215, 96, 0.3);
+            background: rgba(30, 215, 96, 0.05);
+        }
+        
+        .notification.warning {
+            border-color: rgba(255, 184, 32, 0.3);
+            background: rgba(255, 184, 32, 0.05);
+        }
+        
+        .notification.error {
+            border-color: rgba(255, 59, 48, 0.3);
+            background: rgba(255, 59, 48, 0.05);
+        }
+        
+        .notification.info {
+            border-color: rgba(0, 229, 255, 0.3);
+            background: rgba(0, 229, 255, 0.05);
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- GEOSPATIAL MONITOR INTERFACE -->
+    
+    <!-- Enhanced Topbar -->
+    <div class="topbar">
+        <div class="geospatial-header">
+            <div class="header-content">
+                <h1 class="page-title">GEOSPATIAL MONITOR</h1>
+                <p class="page-subtitle">TACTICAL POSITIONING SYSTEM // NEURAL CORE v2.1</p>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>POSITION LOCK: {% if loc %}ACTIVE{% else %}STANDBY{% endif %}</span>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <a class="btn" href="/admin">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    COMMAND CENTER
+                </a>
+                
+                <a class="btn btn-outline" href="/monitor">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                    SYSTEM STATE
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- GEOSPATIAL COMMAND GRID -->
+    <div class="geospatial-grid">
+        <!-- TACTICAL MAP SECTION -->
+        <div class="card" style="--accent-color: var(--geospatial-primary); padding:0; overflow:hidden;">
+            <div style="padding:24px; background: linear-gradient(135deg, var(--geospatial-surface), transparent);">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                    <div>
+                        <h3 style="margin:0; color:var(--text-primary);">TACTICAL GEOSPATIAL DISPLAY</h3>
+                        <p class="muted" style="font-size:13px; margin-top:4px;">REAL-TIME POSITION MONITORING & INTELLIGENCE</p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div class="pulse-dot" style="background:var(--broadcast-green);"></div>
+                            <span style="font-size:12px; color:var(--text-secondary);">POSITION LOCK</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div class="pulse-dot" style="background:var(--geospatial-primary);"></div>
+                            <span style="font-size:12px; color:var(--text-secondary);">COORDINATE GRID</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- TACTICAL MAP CONTAINER -->
+            <div class="tactical-map-container">
+                <div id="geospatialMap"></div>
+                <div class="map-overlay">
+                    <div class="map-grid"></div>
+                    <div class="map-crosshair"></div>
+                </div>
+                
+                <!-- Map Controls -->
+                <div class="map-controls">
+                    <button class="map-control-btn" id="zoomInBtn" title="Zoom In">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="16"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                    </button>
+                    <button class="map-control-btn" id="zoomOutBtn" title="Zoom Out">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                        </svg>
+                    </button>
+                    <button class="map-control-btn" id="locateBtn" title="Locate Me">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a10 10 0 0 0-9.78 12.13A10 10 0 0 0 12 22a10 10 0 0 0 9.78-7.87A10 10 0 0 0 12 2z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                    <button class="map-control-btn" id="layerBtn" title="Change Layer">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                            <polyline points="2 17 12 22 22 17"/>
+                            <polyline points="2 12 12 17 22 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Coordinates Panel -->
+                <div class="map-coordinates-panel">
+                    <div class="coordinates-display">
+                        <div class="coordinate-row">
+                            <span class="coordinate-label">LATITUDE</span>
+                            <span class="coordinate-value" id="latDisplay">0.0000</span>
+                        </div>
+                        <div class="coordinate-row">
+                            <span class="coordinate-label">LONGITUDE</span>
+                            <span class="coordinate-value" id="lonDisplay">0.0000</span>
+                        </div>
+                        <div class="coordinate-row">
+                            <span class="coordinate-label">ZOOM LEVEL</span>
+                            <span class="coordinate-value" id="zoomLevel">6</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- GEOSPATIAL CONTROLS -->
+            <div class="geospatial-controls-panel">
+                <div class="search-system">
+                    <label style="display:block; margin-bottom:8px; font-size:12px; color:var(--text-secondary);">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; vertical-align:middle;">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        LOCATION SEARCH
+                    </label>
+                    <div class="search-container">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="search-input" 
+                            placeholder="Enter coordinates (e.g., 40.7128, -74.0060) or location name..."
+                            onkeypress="if(event.key === 'Enter') searchLocation()"
+                        />
+                        <button type="button" class="search-btn" onclick="searchLocation()" id="searchBtn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            GEO-LOCATE
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Position Data Display -->
+                <div class="position-data-display">
+                    <div class="position-header">
+                        <h4 class="position-title">POSITION INTELLIGENCE</h4>
+                        <div class="position-status">
+                            <div class="status-indicator">
+                                <div class="status-dot"></div>
+                                <span>ACTIVE TRACKING</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="data-grid">
+                        <div class="data-item">
+                            <span class="data-label">LOCATION DESIGNATION</span>
+                            <span class="data-value" id="placeName">UNKNOWN TERRITORY</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">COORDINATE SYSTEM</span>
+                            <span class="data-value">WGS 84</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">LATITUDE</span>
+                            <span class="data-value highlight" id="latitude">0.0000</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">LONGITUDE</span>
+                            <span class="data-value highlight" id="longitude">0.0000</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">APPROX ELEVATION</span>
+                            <span class="data-value" id="elevation">-- m</span>
+                        </div>
+                        <div class="data-item">
+                            <span class="data-label">UPDATE TIME</span>
+                            <span class="data-value" id="updateTime">--:--:--</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Save Position Form -->
+                <form method="POST" action="/save_location" class="save-position-form" id="saveForm">
+                    <input type="hidden" name="place_name" id="placeInput">
+                    <input type="hidden" name="latitude" id="latInput">
+                    <input type="hidden" name="longitude" id="lonInput">
+                    <button type="submit" class="save-btn" id="saveBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                            <polyline points="17 21 17 13 7 13 7 21"/>
+                            <polyline points="7 3 7 8 15 8"/>
+                        </svg>
+                        SECURE POSITION LOCK
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ENVIRONMENTAL MONITOR SECTION -->
+        <div class="card" style="--accent-color: var(--environmental-primary);">
+            <div class="environmental-monitor-panel">
+                <div class="environmental-header">
+                    <div class="environmental-title">
+                        <div class="environmental-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                            </svg>
+                        </div>
+                        <div class="title-content">
+                            <h3>ENVIRONMENTAL MONITOR</h3>
+                            <p class="muted">LIVE CLIMATE INTELLIGENCE FEED</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="environmental-content">
+                    {% if weather %}
+                        <!-- WEATHER CONDITIONS -->
+                        <div class="weather-conditions">
+                            <div class="weather-header">
+                                <div>
+                                    <h4 class="weather-location">{{ weather.name }}{% if weather.country %}, {{ weather.country }}{% endif %}</h4>
+                                    {% if weather.observed_at %}
+                                        <div class="weather-timestamp">OBSERVED: {{ weather.observed_at }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="weather-icon-container">
+                                    {% if weather.icon %}
+                                        <img class="weather-icon" alt="Weather icon" src="https://openweathermap.org/img/wn/{{ weather.icon }}@4x.png">
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="temperature-display">
+                                <div>
+                                    <span class="temperature-main">{{ weather.temp }}</span>
+                                    <span class="temperature-unit">°C</span>
+                                </div>
+                                <div class="temperature-feels">
+                                    <div class="feels-label">FEELS LIKE</div>
+                                    <div class="feels-value">{{ weather.feels }} °C</div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 24px;">
+                                <div class="data-label">ATMOSPHERIC CONDITION</div>
+                                <div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-top: 8px;">
+                                    {% if weather.condition %}{{ weather.condition }}{% endif %}
+                                    {% if weather.desc %}({{ weather.desc }}){% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ENVIRONMENTAL METRICS -->
+                        <div class="environmental-metrics-grid">
+                            <div class="metric-card metric-humidity">
+                                <div class="metric-header">
+                                    <div class="metric-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M3 15a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v0a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v0z"/>
+                                            <path d="M12 9v6"/>
+                                        </svg>
+                                    </div>
+                                    <span class="metric-title">HUMIDITY</span>
+                                </div>
+                                <div class="metric-value">{{ weather.humidity }}<span class="metric-unit">%</span></div>
+                            </div>
+                            
+                            <div class="metric-card metric-pressure">
+                                <div class="metric-header">
+                                    <div class="metric-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <path d="M16 8v8"/>
+                                            <path d="M8 16V8v8z"/>
+                                        </svg>
+                                    </div>
+                                    <span class="metric-title">PRESSURE</span>
+                                </div>
+                                <div class="metric-value">{{ weather.pressure }}<span class="metric-unit">hPa</span></div>
+                            </div>
+                            
+                            <div class="metric-card metric-wind">
+                                <div class="metric-header">
+                                    <div class="metric-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/>
+                                            <path d="M9.6 4.6A2 2 0 1 1 11 8H2"/>
+                                            <path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>
+                                        </svg>
+                                    </div>
+                                    <span class="metric-title">WIND</span>
+                                </div>
+                                <div class="metric-value">{{ weather.wind_speed }}<span class="metric-unit">m/s</span></div>
+                                {% if weather.wind_dir %}
+                                    <div style="font-size:12px; color:var(--text-tertiary); margin-top:4px;">
+                                        Direction: {{ weather.wind_dir }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="metric-card metric-visibility">
+                                <div class="metric-header">
+                                    <div class="metric-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <path d="M12 16v-4"/>
+                                            <path d="M12 8h.01"/>
+                                        </svg>
+                                    </div>
+                                    <span class="metric-title">VISIBILITY</span>
+                                </div>
+                                <div class="metric-value">
+                                    {% if weather.visibility_m %}
+                                        {{ (weather.visibility_m / 1000) | round(1) }}
+                                    {% else %}
+                                        --
+                                    {% endif %}
+                                    <span class="metric-unit">km</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ADDITIONAL WEATHER DATA -->
+                        {% if weather.cloudiness is not none or weather.rain_1h is not none or weather.sunrise %}
+                            <div class="weather-details">
+                                <div class="data-label" style="margin-bottom:16px;">ATMOSPHERIC READINGS</div>
+                                <div class="details-grid">
+                                    {% if weather.cloudiness is not none %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">Cloud Cover</span>
+                                            <span class="detail-value">{{ weather.cloudiness }}%</span>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if weather.rain_1h is not none %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">Rain (1h)</span>
+                                            <span class="detail-value" style="color:var(--geospatial-primary);">{{ weather.rain_1h }}mm</span>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if weather.rain_3h is not none %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">Rain (3h)</span>
+                                            <span class="detail-value" style="color:var(--geospatial-primary);">{{ weather.rain_3h }}mm</span>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if weather.sunrise %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">Sunrise</span>
+                                            <span class="detail-value">{{ weather.sunrise }}</span>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if weather.sunset %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">Sunset</span>
+                                            <span class="detail-value">{{ weather.sunset }}</span>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if weather.temp_min is not none and weather.temp_max is not none %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">Temperature Range</span>
+                                            <span class="detail-value">{{ weather.temp_min }}° - {{ weather.temp_max }}°</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- AIR QUALITY -->
+                        {% if weather.air %}
+                            <div class="air-quality-panel">
+                                <div class="aqi-header">
+                                    <div class="aqi-display">
+                                        <div class="aqi-value">{{ weather.air.aqi }}</div>
+                                        <div class="aqi-info">
+                                            <div class="aqi-label">AIR QUALITY INDEX</div>
+                                            <div class="aqi-description">
+                                                {% if weather.air.aqi == 1 %}EXCELLENT
+                                                {% elif weather.air.aqi == 2 %}GOOD
+                                                {% elif weather.air.aqi == 3 %}MODERATE
+                                                {% elif weather.air.aqi == 4 %}POOR
+                                                {% elif weather.air.aqi == 5 %}VERY POOR
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="aqi-status {% if weather.air.aqi <= 2 %}good{% elif weather.air.aqi == 3 %}moderate{% else %}poor{% endif %}">
+                                        {% if weather.air.aqi <= 2 %}GOOD
+                                        {% elif weather.air.aqi == 3 %}MODERATE
+                                        {% else %}POOR
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                {% if weather.air.components %}
+                                    <div class="data-label" style="margin:20px 0 12px 0;">POLLUTANT CONCENTRATION</div>
+                                    <div class="pollutants-grid">
+                                        <div class="pollutant-item">
+                                            <div class="pollutant-label">PM2.5</div>
+                                            <div class="pollutant-value">{{ weather.air.components.pm2_5 }}<span class="pollutant-unit">μg/m³</span></div>
+                                        </div>
+                                        <div class="pollutant-item">
+                                            <div class="pollutant-label">PM10</div>
+                                            <div class="pollutant-value">{{ weather.air.components.pm10 }}<span class="pollutant-unit">μg/m³</span></div>
+                                        </div>
+                                        <div class="pollutant-item">
+                                            <div class="pollutant-label">O₃</div>
+                                            <div class="pollutant-value">{{ weather.air.components.o3 }}<span class="pollutant-unit">μg/m³</span></div>
+                                        </div>
+                                        <div class="pollutant-item">
+                                            <div class="pollutant-label">NO₂</div>
+                                            <div class="pollutant-value">{{ weather.air.components.no2 }}<span class="pollutant-unit">μg/m³</span></div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if weather.air.observed_at %}
+                                    <div class="weather-timestamp" style="margin-top:16px;">AIR QUALITY OBSERVED: {{ weather.air.observed_at }}</div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <!-- EMPTY STATE -->
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                                </svg>
+                            </div>
+                            <h4 class="empty-state-title">ENVIRONMENTAL FEED OFFLINE</h4>
+                            <p class="empty-state-description">
+                                Secure a position lock to initialize climate intelligence monitoring.
+                                Environmental data will appear automatically once location is set.
+                            </p>
+                            <a href="#saveForm" class="btn btn-outline" style="margin-top:20px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                </svg>
+                                SET POSITION LOCK
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Container -->
+    <div class="notification-system" id="notificationSystem"></div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+    
+    <script>
+        // Enhanced Geospatial Monitor System
+        class GeospatialMonitor {
+            constructor() {
+                this.map = null;
+                this.marker = null;
+                this.API_KEY = {{ locationiq_key | tojson }};
+                this.layers = {};
+                this.currentLayer = 'street';
+                this.notificationSystem = document.getElementById('notificationSystem');
+                this.initializeMap();
+                this.setupEventListeners();
+                this.loadSavedLocation();
+            }
+            
+            initializeMap() {
+                // Initialize tactical map with default view
+                this.map = L.map('geospatialMap', {
+                    zoomControl: false,
+                    attributionControl: false
+                }).setView([9.9312, 76.2673], 6);
+                
+                // Add map layers
+                this.layers.street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(this.map);
+                
+                this.layers.topographic = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenTopoMap'
+                });
+                
+                this.layers.dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© CARTO'
+                });
+                
+                // Add geocoder control
+                L.Control.geocoder({
+                    defaultMarkGeocode: false
+                }).on('markgeocode', (e) => {
+                    const { center, name } = e.geocode;
+                    this.updateLocation(center.lat, center.lng, name);
+                    this.map.setView(center, 12);
+                }).addTo(this.map);
+                
+                // Add zoom control
+                L.control.zoom({
+                    position: 'bottomright'
+                }).addTo(this.map);
+                
+                // Add custom marker
+                const customIcon = L.divIcon({
+                    className: 'custom-marker',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                });
+                
+                this.marker = L.marker([9.9312, 76.2673], { icon: customIcon }).addTo(this.map);
+                
+                // Setup map events
+                this.map.on('click', (e) => {
+                    this.handleMapClick(e.latlng);
+                });
+                
+                this.map.on('zoomend', () => {
+                    this.updateZoomLevel();
+                });
+                
+                this.map.on('moveend', () => {
+                    this.updateMapInfo();
+                });
+            }
+            
+            setupEventListeners() {
+                // Map control buttons
+                document.getElementById('zoomInBtn').addEventListener('click', () => {
+                    this.map.zoomIn();
+                });
+                
+                document.getElementById('zoomOutBtn').addEventListener('click', () => {
+                    this.map.zoomOut();
+                });
+                
+                document.getElementById('locateBtn').addEventListener('click', () => {
+                    this.locateUser();
+                });
+                
+                document.getElementById('layerBtn').addEventListener('click', () => {
+                    this.toggleMapLayer();
+                });
+                
+                // Search functionality
+                document.getElementById('searchBtn').addEventListener('click', () => this.searchLocation());
+                document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.searchLocation();
+                });
+                
+                // Save form
+                document.getElementById('saveForm').addEventListener('submit', (e) => {
+                    this.handleSaveForm(e);
+                });
+                
+                // Update time display
+                this.updateTime();
+                setInterval(() => this.updateTime(), 1000);
+            }
+            
+            async searchLocation() {
+                const query = document.getElementById('searchInput').value.trim();
+                if (!query) {
+                    this.showNotification('Search Error', 'Please enter a location or coordinates', 'warning');
+                    return;
+                }
+                
+                const searchBtn = document.getElementById('searchBtn');
+                const originalText = searchBtn.innerHTML;
+                searchBtn.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="rotating">
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    GEO-LOCATING...
+                `;
+                
+                try {
+                    // Check if input is coordinates
+                    if (this.isCoordinates(query)) {
+                        const [lat, lon] = query.split(',').map(coord => parseFloat(coord.trim()));
+                        if (isNaN(lat) || isNaN(lon)) {
+                            throw new Error('Invalid coordinates');
+                        }
+                        
+                        // Fetch location name from coordinates
+                        const response = await fetch(
+                            `https://us1.locationiq.com/v1/reverse.php?key=${this.API_KEY}&lat=${lat}&lon=${lon}&format=json`
+                        );
+                        const data = await response.json();
+                        
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        
+                        this.updateLocation(lat, lon, data.display_name);
+                        this.map.setView([lat, lon], 12);
+                        this.showNotification('Position Lock', 'Coordinates located successfully', 'success');
+                    } else {
+                        // Search by place name
+                        const response = await fetch(
+                            `https://us1.locationiq.com/v1/search.php?key=${this.API_KEY}&q=${encodeURIComponent(query)}&format=json`
+                        );
+                        const data = await response.json();
+                        
+                        if (!Array.isArray(data) || !data.length) {
+                            throw new Error('Location not found');
+                        }
+                        
+                        const location = data[0];
+                        this.updateLocation(location.lat, location.lon, location.display_name);
+                        this.map.setView([location.lat, location.lon], 12);
+                        this.showNotification('Position Lock', 'Location found successfully', 'success');
+                    }
+                } catch (error) {
+                    console.error('Search error:', error);
+                    this.showNotification('Search Failed', error.message || 'Unable to locate position', 'error');
+                } finally {
+                    searchBtn.innerHTML = originalText;
+                }
+            }
+            
+            handleMapClick(latlng) {
+                // Show click animation
+                this.showClickAnimation(latlng);
+                
+                // Reverse geocode to get location name
+                this.reverseGeocode(latlng.lat, latlng.lng);
+                
+                // Update position
+                this.updateLocation(latlng.lat, latlng.lng);
+                
+                // Show notification
+                this.showNotification('Map Click', 'Position selected on map', 'info');
+            }
+            
+            updateLocation(lat, lon, place = 'Unknown Location') {
+                // Format coordinates
+                const latFormatted = parseFloat(lat).toFixed(6);
+                const lonFormatted = parseFloat(lon).toFixed(6);
+                
+                // Update marker position
+                this.marker.setLatLng([lat, lon]);
+                
+                // Update displays
+                document.getElementById('latDisplay').textContent = latFormatted;
+                document.getElementById('lonDisplay').textContent = lonFormatted;
+                document.getElementById('latitude').textContent = latFormatted;
+                document.getElementById('longitude').textContent = lonFormatted;
+                document.getElementById('placeName').textContent = place;
+                
+                // Update form inputs
+                document.getElementById('placeInput').value = place;
+                document.getElementById('latInput').value = lat;
+                document.getElementById('lonInput').value = lon;
+                
+                // Animate coordinate update
+                this.animateCoordinateUpdate();
+                
+                // Update time
+                this.updateTime();
+            }
+            
+            async reverseGeocode(lat, lon) {
+                try {
+                    const response = await fetch(
+                        `https://us1.locationiq.com/v1/reverse.php?key=${this.API_KEY}&lat=${lat}&lon=${lon}&format=json`
+                    );
+                    const data = await response.json();
+                    
+                    if (data.display_name) {
+                        document.getElementById('placeName').textContent = data.display_name;
+                        document.getElementById('placeInput').value = data.display_name;
+                    }
+                    
+                    // Try to get elevation if available
+                    if (data.address && data.address.elevation) {
+                        document.getElementById('elevation').textContent = `${data.address.elevation} m`;
+                    }
+                } catch (error) {
+                    console.error('Reverse geocoding error:', error);
+                }
+            }
+            
+            async locateUser() {
+                if (!navigator.geolocation) {
+                    this.showNotification('Location Error', 'Geolocation not supported by browser', 'error');
+                    return;
+                }
+                
+                this.showNotification('Locating', 'Attempting to get your current position...', 'info');
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        this.updateLocation(latitude, longitude, 'Current Location');
+                        this.map.setView([latitude, longitude], 14);
+                        this.showNotification('Position Found', 'Your current location has been locked', 'success');
+                    },
+                    (error) => {
+                        this.showNotification('Location Error', 'Unable to retrieve your location', 'error');
+                    }
+                );
+            }
+            
+            toggleMapLayer() {
+                // Remove current layer
+                this.layers[this.currentLayer].remove();
+                
+                // Switch to next layer
+                const layers = ['street', 'topographic', 'dark'];
+                const currentIndex = layers.indexOf(this.currentLayer);
+                const nextIndex = (currentIndex + 1) % layers.length;
+                this.currentLayer = layers[nextIndex];
+                
+                // Add new layer
+                this.layers[this.currentLayer].addTo(this.map);
+                
+                // Update button title
+                const layerBtn = document.getElementById('layerBtn');
+                layerBtn.title = `Switch to ${layers[(nextIndex + 1) % layers.length]} layer`;
+                
+                this.showNotification('Map Layer', `Switched to ${this.currentLayer} view`, 'info');
+            }
+            
+            updateZoomLevel() {
+                document.getElementById('zoomLevel').textContent = this.map.getZoom();
+            }
+            
+            updateMapInfo() {
+                const center = this.map.getCenter();
+                this.updateLocation(center.lat, center.lng);
+            }
+            
+            updateTime() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', { 
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                document.getElementById('updateTime').textContent = timeString;
+            }
+            
+            showClickAnimation(latlng) {
+                const circle = L.circle(latlng, {
+                    color: 'var(--geospatial-primary)',
+                    fillColor: 'var(--geospatial-primary)',
+                    fillOpacity: 0.2,
+                    radius: 30
+                }).addTo(this.map);
+                
+                setTimeout(() => {
+                    this.map.removeLayer(circle);
+                }, 1000);
+            }
+            
+            animateCoordinateUpdate() {
+                const elements = [
+                    document.getElementById('latDisplay'),
+                    document.getElementById('lonDisplay'),
+                    document.getElementById('latitude'),
+                    document.getElementById('longitude')
+                ];
+                
+                elements.forEach(el => {
+                    el.classList.add('coordinate-update');
+                    setTimeout(() => {
+                        el.classList.remove('coordinate-update');
+                    }, 500);
+                });
+            }
+            
+            async handleSaveForm(e) {
+                e.preventDefault();
+                
+                const saveBtn = document.getElementById('saveBtn');
+                const originalText = saveBtn.innerHTML;
+                
+                // Show loading state
+                saveBtn.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="rotating">
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    SECURING POSITION...
+                `;
+                saveBtn.disabled = true;
+                
+                try {
+                    // Submit form
+                    const formData = new FormData(e.target);
+                    const response = await fetch(e.target.action, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (response.ok) {
+                        this.showNotification('Position Secured', 'Location lock successfully saved to database', 'success');
+                        
+                        // Reload page after delay to show updated weather
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        throw new Error('Failed to save location');
+                    }
+                } catch (error) {
+                    console.error('Save error:', error);
+                    this.showNotification('Save Failed', 'Unable to save position lock', 'error');
+                } finally {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.disabled = false;
+                }
+            }
+            
+            loadSavedLocation() {
+                {% if loc %}
+                    const savedLat = {{ loc[2] }};
+                    const savedLon = {{ loc[3] }};
+                    const savedPlace = {{ loc[1] | tojson }};
+                    
+                    this.updateLocation(savedLat, savedLon, savedPlace);
+                    this.map.setView([savedLat, savedLon], 12);
+                    
+                    this.showNotification('Position Restored', 'Previous location lock loaded successfully', 'success');
+                {% endif %}
+            }
+            
+            showNotification(title, message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.innerHTML = `
+                    <div style="display:flex; align-items:flex-start; gap:12px;">
+                        <div style="flex-shrink:0; width:24px;height:24px; display:flex; align-items:center; justify-content:center;">
+                            ${type === 'success' ? '✓' :
+                              type === 'warning' ? '⚠' :
+                              type === 'error' ? '✗' : 'ⓘ'}
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px;">${title}</div>
+                            <div style="font-size:14px; color:var(--text-secondary);">${message}</div>
+                        </div>
+                        <button class="close-notification" style="background:none; border:none; color:var(--text-tertiary); cursor:pointer; padding:4px;">
+                            ×
+                        </button>
+                    </div>
+                `;
+                
+                this.notificationSystem.appendChild(notification);
+                
+                // Add close button functionality
+                notification.querySelector('.close-notification').addEventListener('click', () => {
+                    this.removeNotification(notification);
+                });
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    this.removeNotification(notification);
+                }, 5000);
+            }
+            
+            removeNotification(notification) {
+                notification.style.animation = 'slideOutRight 0.3s ease-out forwards';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }
+            
+            isCoordinates(input) {
+                const coordinateRegex = /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/;
+                return coordinateRegex.test(input);
+            }
+        }
+        
+        // Initialize geospatial monitor when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.geospatialMonitor = new GeospatialMonitor();
+            
+            // Add animation styles
+            const style = document.createElement('style');
+            style.textContent = `
+                .rotating {
+                    animation: rotate 1s linear infinite;
+                }
+                
+                @keyframes rotate {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+{% endblock %}

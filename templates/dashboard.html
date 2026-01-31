@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AUDIENCE CONTROL</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* PROFESSIONAL MINIMAL WHITE DESIGN SYSTEM */
+    :root {
+      --pure-white: #FFFFFF;
+      --near-white: #F8FAFC;
+      --subtle-gray: #E5E7EB;
+      --text-primary: #111827;
+      --text-secondary: #6B7280;
+      --primary-accent: #2563EB;
+      --primary-hover: #1D4ED8;
+      --success-green: #059669;
+      --error-red: #DC2626;
+      --vote-purple: #7C3AED;
+      --logout-red: #DC2626;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: var(--near-white);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+    
+    /* SUBTLE BACKGROUND TEXTURE */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.02) 0%, transparent 30%),
+        radial-gradient(circle at 90% 80%, rgba(124, 58, 237, 0.02) 0%, transparent 30%);
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    /* DASHBOARD CONTAINER */
+    .dashboard-container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 24px;
+    }
+    
+    /* TOP BAR */
+    .dashboard-topbar {
+      background: var(--pure-white);
+      border: 1px solid var(--subtle-gray);
+      border-radius: 20px;
+      padding: 28px 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .dashboard-topbar:hover {
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+      transform: translateY(-1px);
+    }
+    
+    .dashboard-topbar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, 
+        var(--primary-accent), 
+        var(--vote-purple), 
+        var(--success-green));
+      background-size: 200% 100%;
+      animation: topbarScan 6s linear infinite;
+    }
+    
+    @keyframes topbarScan {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .dashboard-title {
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    
+    /* USER SECTION WITH LOGOUT */
+    .user-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      background: var(--near-white);
+      border: 1px solid var(--subtle-gray);
+      border-radius: 16px;
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary-accent), var(--vote-purple));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--pure-white);
+      font-weight: 600;
+      font-size: 16px;
+    }
+    
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .user-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .user-role {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+    
+    /* LOGOUT BUTTON */
+    .logout-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--near-white);
+      border: 1px solid var(--subtle-gray);
+      border-radius: 16px;
+      color: var(--logout-red);
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .logout-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(220, 38, 38, 0.05), 
+        transparent);
+      transition: left 0.6s;
+    }
+    
+    .logout-btn:hover {
+      background: rgba(220, 38, 38, 0.05);
+      border-color: var(--logout-red);
+      color: var(--logout-red);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.1);
+    }
+    
+    .logout-btn:hover::before {
+      left: 100%;
+    }
+    
+    .logout-btn:active {
+      transform: translateY(0);
+    }
+    
+    .logout-icon {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.2s;
+    }
+    
+    .logout-btn:hover .logout-icon {
+      transform: translateX(2px);
+    }
+    
+    /* DASHBOARD GRID */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    
+    /* VOTE CARD */
+    .vote-card {
+      background: var(--pure-white);
+      border: 1px solid var(--subtle-gray);
+      border-radius: 20px;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .vote-card:hover {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+      transform: translateY(-2px);
+    }
+    
+    .vote-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(to bottom, 
+        var(--vote-purple), 
+        var(--primary-accent));
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, 
+        rgba(124, 58, 237, 0.1), 
+        rgba(124, 58, 237, 0.05));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--vote-purple);
+    }
+    
+    .card-title {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    
+    .card-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+    
+    /* VOTE FORM */
+    .vote-form {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    
+    .form-section {
+      position: relative;
+    }
+    
+    .section-label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    
+    /* RADIO SELECTION */
+    .radio-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    
+    .radio-option {
+      position: relative;
+    }
+    
+    .radio-input {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .radio-label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      background: var(--near-white);
+      border: 2px solid var(--subtle-gray);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      text-align: center;
+    }
+    
+    .radio-label:hover {
+      border-color: #9CA3AF;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+    
+    .radio-input:checked + .radio-label {
+      background: linear-gradient(135deg, 
+        rgba(124, 58, 237, 0.1), 
+        rgba(124, 58, 237, 0.05));
+      border-color: var(--vote-purple);
+      color: var(--vote-purple);
+      font-weight: 600;
+    }
+    
+    .radio-icon {
+      font-size: 20px;
+      margin-bottom: 8px;
+      opacity: 0.7;
+    }
+    
+    .radio-input:checked + .radio-label .radio-icon {
+      opacity: 1;
+    }
+    
+    .radio-text {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    /* VOTE BUTTON */
+    .vote-button {
+      width: 100%;
+      padding: 20px;
+      background: linear-gradient(135deg, 
+        var(--vote-purple), 
+        #6D28D9);
+      border: none;
+      border-radius: 14px;
+      color: var(--pure-white);
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    
+    .vote-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent);
+      transition: left 0.6s;
+    }
+    
+    .vote-button:hover {
+      background: linear-gradient(135deg, 
+        #6D28D9, 
+        #5B21B6);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.3);
+    }
+    
+    .vote-button:hover::before {
+      left: 100%;
+    }
+    
+    .vote-button:active {
+      transform: translateY(0);
+    }
+    
+    .button-icon {
+      width: 20px;
+      height: 20px;
+      transition: transform 0.2s;
+    }
+    
+    .vote-button:hover .button-icon {
+      transform: translateX(3px);
+    }
+    
+    /* DECISION CARD */
+    .decision-card {
+      background: var(--pure-white);
+      border: 1px solid var(--subtle-gray);
+      border-radius: 20px;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .decision-card:hover {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+      transform: translateY(-2px);
+    }
+    
+    .decision-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(to bottom, 
+        var(--primary-accent), 
+        var(--success-green));
+    }
+    
+    /* DECISION DATA */
+    .decision-data {
+      background: var(--near-white);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 24px 0;
+      border: 1px solid var(--subtle-gray);
+    }
+    
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--subtle-gray);
+    }
+    
+    .data-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    
+    .data-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    
+    .data-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-transform: capitalize;
+    }
+    
+    .decision-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    
+    .stat-box {
+      text-align: center;
+      padding: 20px;
+      background: var(--near-white);
+      border-radius: 14px;
+      border: 1px solid var(--subtle-gray);
+    }
+    
+    .stat-value {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    
+    /* PREVIEW CARD */
+    .preview-card {
+      background: linear-gradient(135deg, 
+        rgba(37, 99, 235, 0.03), 
+        rgba(37, 99, 235, 0.01));
+      border: 1px solid var(--subtle-gray);
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .preview-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, 
+        transparent 30%, 
+        rgba(37, 99, 235, 0.02) 50%, 
+        transparent 70%);
+      animation: previewShimmer 3s infinite;
+    }
+    
+    @keyframes previewShimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    
+    .preview-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0 0 12px 0;
+    }
+    
+    .preview-message {
+      font-size: 15px;
+      color: var(--text-primary);
+      line-height: 1.5;
+      margin: 0;
+    }
+    
+    .preview-highlight {
+      color: var(--primary-accent);
+      font-weight: 600;
+    }
+    
+    .preview-note {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 12px 0 0 0;
+      line-height: 1.4;
+    }
+    
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    
+    .empty-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 20px;
+      opacity: 0.3;
+    }
+    
+    .empty-text {
+      color: var(--text-secondary);
+      margin: 0 0 8px 0;
+    }
+    
+    /* RESPONSIVE */
+    @media (max-width: 1100px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .dashboard-container {
+        max-width: 95%;
+        padding: 0 20px;
+      }
+      
+      .radio-group {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .dashboard-container {
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+      
+      .dashboard-topbar {
+        padding: 24px;
+      }
+      
+      .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      
+      .dashboard-title {
+        font-size: 28px;
+      }
+      
+      .user-section {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .user-badge {
+        flex: 1;
+      }
+      
+      .logout-btn {
+        flex-shrink: 0;
+      }
+      
+      .vote-card,
+      .decision-card {
+        padding: 24px;
+      }
+      
+      .card-title {
+        font-size: 20px;
+      }
+      
+      .radio-group {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .decision-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .dashboard-topbar {
+        padding: 20px;
+      }
+      
+      .user-section {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+      
+      .user-badge {
+        justify-content: center;
+        text-align: center;
+      }
+      
+      .logout-btn {
+        justify-content: center;
+      }
+      
+      .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      
+      .radio-group {
+        grid-template-columns: 1fr;
+      }
+      
+      .vote-card,
+      .decision-card {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- DASHBOARD CONTAINER -->
+  <div class="dashboard-container">
+    <!-- TOP BAR -->
+    <div class="dashboard-topbar">
+      <div class="dashboard-header">
+        <h1 class="dashboard-title">Audience Control</h1>
+        <div class="user-section">
+          <div class="user-badge">
+            <div class="user-avatar">
+              {{ user[:2]|upper }}
+            </div>
+            <div class="user-info">
+              <div class="user-name">{{ user }}</div>
+              <div class="user-role">Active Participant</div>
+            </div>
+          </div>
+          
+          <!-- LOGOUT BUTTON -->
+          <a href="/logout" class="logout-btn">
+            <svg class="logout-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Logout
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- DASHBOARD GRID -->
+    <div class="dashboard-grid">
+      <!-- VOTE CARD -->
+      <div class="vote-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="card-title">Cast Your Vote</h2>
+            <p class="card-subtitle">Shape the broadcast in real-time</p>
+          </div>
+        </div>
+        
+        <form method="POST" action="/vote" class="vote-form">
+          <!-- LANGUAGE SELECTION -->
+          <div class="form-section">
+            <label class="section-label">Language Preference</label>
+            <div class="radio-group">
+              <div class="radio-option">
+                <input class="radio-input" type="radio" name="language" value="any" id="lang-any" checked>
+                <label class="radio-label" for="lang-any">
+                  <span class="radio-icon">🌍</span>
+                  <span class="radio-text">Any</span>
+                </label>
+              </div>
+              
+              <div class="radio-option">
+                <input class="radio-input" type="radio" name="language" value="english" id="lang-english">
+                <label class="radio-label" for="lang-english">
+                  <span class="radio-icon">🇬🇧</span>
+                  <span class="radio-text">English</span>
+                </label>
+              </div>
+              
+              <div class="radio-option">
+                <input class="radio-input" type="radio" name="language" value="malayalam" id="lang-malayalam">
+                <label class="radio-label" for="lang-malayalam">
+                  <span class="radio-icon">🇮🇳</span>
+                  <span class="radio-text">Malayalam</span>
+                </label>
+              </div>
+              
+              <div class="radio-option">
+                <input class="radio-input" type="radio" name="language" value="tamil" id="lang-tamil">
+                <label class="radio-label" for="lang-tamil">
+                  <span class="radio-icon">🇮🇳</span>
+                  <span class="radio-text">Tamil</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- GENRE SELECTION -->
+          <div class="form-section">
+            <label class="section-label">Music Genre</label>
+            <div class="radio-group">
+              <div class="radio-option">
+                <input class="radio-input" type="radio" name="genre" value="romantic" id="genre-romantic" checked>
+                <label class="radio-label" for="genre-romantic">
+                  <span class="radio-icon">❤️</span>
+                  <span class="radio-text">Romantic</span>
+                </label>
+              </div>
+              
+              <div class="radio-option">
+                <input class="radio-input" type="radio" name="genre" value="chill" id="genre-chill">
+                <label class="radio-label" for="genre-chill">
+                  <span class="radio-icon">😌</span>
+                  <span class="radio-text">Chill</span>
+                </label>
+              </div>
+              
+              <div class="radio-option">
+                <input class="radio-input" type="radio" name="genre" value="happy" id="genre-happy">
+                <label class="radio-label" for="genre-happy">
+                  <span class="radio-icon">😊</span>
+                  <span class="radio-text">Happy</span>
+                </label>
+              </div>
+              
+              <div class="radio-option">
+                <input class="radio-input" type="radio" name="genre" value="sad" id="genre-sad">
+                <label class="radio-label" for="genre-sad">
+                  <span class="radio-icon">😔</span>
+                  <span class="radio-text">Sad</span>
+                </label>
+              </div>
+              
+              <div class="radio-option">
+                <input class="radio-input" type="radio" name="genre" value="energetic" id="genre-energetic">
+                <label class="radio-label" for="genre-energetic">
+                  <span class="radio-icon">⚡</span>
+                  <span class="radio-text">Energetic</span>
+                </label>
+              </div>
+              
+              <div class="radio-option">
+                <input class="radio-input" type="radio" name="genre" value="focus" id="genre-focus">
+                <label class="radio-label" for="genre-focus">
+                  <span class="radio-icon">🎯</span>
+                  <span class="radio-text">Focus</span>
+                </label>
+              </div>
+              
+              <div class="radio-option">
+                <input class="radio-input" type="radio" name="genre" value="travel" id="genre-travel">
+                <label class="radio-label" for="genre-travel">
+                  <span class="radio-icon">✈️</span>
+                  <span class="radio-text">Travel</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <button type="submit" class="vote-button">
+            <span class="button-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 12l2 2 4-4"/>
+                <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+              </svg>
+            </span>
+            Submit Vote
+          </button>
+        </form>
+      </div>
+      
+      <!-- DECISION CARD -->
+      <div class="decision-card">
+        <div class="card-header">
+          <div class="card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="card-title">Current Decision</h2>
+            <p class="card-subtitle">Live broadcast configuration</p>
+          </div>
+        </div>
+        
+        {% if current_pref %}
+          <div class="decision-data">
+            <div class="data-row">
+              <span class="data-label">Selected Language</span>
+              <span class="data-value">{{ current_pref.language }}</span>
+            </div>
+            <div class="data-row">
+              <span class="data-label">Active Genre</span>
+              <span class="data-value">{{ current_pref.genre }}</span>
+            </div>
+          </div>
+          
+          <div class="decision-stats">
+            <div class="stat-box">
+              <div class="stat-value">{{ current_pref.window_minutes }}</div>
+              <div class="stat-label">Decision Window (min)</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value">{{ current_pref.threshold }}</div>
+              <div class="stat-label">Vote Threshold</div>
+            </div>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <p class="empty-text">No active preference data</p>
+            <p class="card-subtitle">Cast your first vote to begin</p>
+          </div>
+        {% endif %}
+        
+        <!-- PREVIEW CARD -->
+        <div class="preview-card">
+          <h3 class="preview-title">Welcome, <span class="preview-highlight">{{ user }}</span></h3>
+          <p class="preview-message">
+            Your vote directly influences the current broadcast selection. 
+            Every submission helps shape the listening experience for everyone.
+          </p>
+          <p class="preview-note">
+            Real-time voting • Collective decision-making • Live broadcast updates
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Form submission animation
+    const form = document.querySelector('.vote-form');
+    const submitBtn = form.querySelector('.vote-button');
+    
+    form.addEventListener('submit', function(e) {
+      // Show loading state
+      submitBtn.innerHTML = `
+        <span class="button-icon rotating">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+        </span>
+        Processing Vote...
+      `;
+      submitBtn.style.pointerEvents = 'none';
+      
+      // Add rotating animation CSS
+      const style = document.createElement('style');
+      style.textContent = `
+        .rotating {
+          animation: rotate 1s linear infinite;
+        }
+        
+        @keyframes rotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    });
+    
+    // Radio selection animation
+    const radioLabels = document.querySelectorAll('.radio-label');
+    radioLabels.forEach(label => {
+      label.addEventListener('click', function() {
+        // Add click animation
+        this.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+          this.style.transform = '';
+        }, 150);
+      });
+    });
+    
+    // Add hover effect to decision card stats
+    const statBoxes = document.querySelectorAll('.stat-box');
+    statBoxes.forEach(box => {
+      box.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-2px)';
+        this.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.06)';
+      });
+      
+      box.addEventListener('mouseleave', function() {
+        this.style.transform = '';
+        this.style.boxShadow = '';
+      });
+    });
+    
+    // Logout button confirmation
+    const logoutBtn = document.querySelector('.logout-btn');
+    logoutBtn.addEventListener('click', function(e) {
+      if (!confirm('Are you sure you want to logout?')) {
+        e.preventDefault();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1757 @@
+{% extends "base.html" %}
+
+{% block title %}ALERT BROADCAST COMMAND // NEURAL CORE{% endblock %}
+
+{% block head_extra %}
+    <style>
+        :root {
+            /* Alert Color System */
+            --alert-primary: #ff3b30;
+            --alert-secondary: #ff453a;
+            --alert-success: #1ed760;
+            --alert-warning: #ffb820;
+            --alert-info: #00e5ff;
+            
+            /* Broadcast States */
+            --broadcast-ready: rgba(30, 215, 96, 0.1);
+            --broadcast-active: rgba(255, 59, 48, 0.1);
+            --broadcast-pending: rgba(255, 184, 32, 0.1);
+            --broadcast-standby: rgba(0, 229, 255, 0.1);
+            
+            /* Panel Backgrounds */
+            --panel-alert: rgba(255, 59, 48, 0.03);
+            --panel-log: rgba(0, 229, 255, 0.03);
+            --panel-form: rgba(11, 14, 20, 0.95);
+            
+            /* Glass Effects */
+            --glass-alert: rgba(255, 59, 48, 0.1);
+            --glass-log: rgba(0, 229, 255, 0.1);
+            --glass-form: rgba(255, 255, 255, 0.05);
+        }
+        
+        /* ===== ALERT BROADCAST STYLES ===== */
+        
+        /* Enhanced Topbar */
+        .topbar {
+            background: linear-gradient(135deg, var(--panel-alert), transparent);
+            border: 1px solid var(--glass-alert);
+            border-radius: 16px;
+            padding: 24px 32px;
+            margin-bottom: 32px;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+        }
+        
+        .header-content {
+            flex: 1;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--alert-primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            letter-spacing: 0.05em;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        /* Enhanced Grid Layout */
+        .alert-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 24px;
+            margin: 24px 0;
+        }
+        
+        @media (max-width: 1200px) {
+            .alert-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* ===== ALERT TRANSMISSION SYSTEM ===== */
+        
+        .alert-transmission-panel {
+            background: var(--panel-alert);
+            border: 1px solid var(--glass-alert);
+            border-radius: 20px;
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .alert-transmission-panel:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--alert-primary);
+        }
+        
+        .alert-transmission-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, 
+                var(--alert-primary), 
+                var(--alert-warning),
+                var(--alert-info));
+            opacity: 0.8;
+        }
+        
+        .transmission-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .transmission-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .transmission-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255, 59, 48, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--alert-primary);
+        }
+        
+        /* Transmission Status */
+        .transmission-status {
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-primary);
+        }
+        
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .status-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .status-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--alert-success);
+            position: relative;
+        }
+        
+        .status-dot::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            background: var(--alert-success);
+            animation: pulse 2s infinite;
+            opacity: 0.3;
+        }
+        
+        .status-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--alert-success);
+        }
+        
+        .status-progress {
+            height: 6px;
+            background: var(--border-primary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, 
+                var(--alert-primary), 
+                var(--alert-warning));
+            border-radius: 3px;
+            position: relative;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.2), 
+                transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        /* ===== LANGUAGE SELECTOR ===== */
+        
+        .language-section {
+            margin-bottom: 32px;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--broadcast-standby);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--alert-info);
+        }
+        
+        .section-title {
+            flex: 1;
+        }
+        
+        .section-title h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .section-subtitle {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+        
+        .section-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: var(--broadcast-standby);
+            color: var(--alert-info);
+        }
+        
+        .language-selector-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+        }
+        
+        .language-option {
+            position: relative;
+        }
+        
+        .language-option input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .language-card {
+            padding: 20px;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-primary);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .language-card:hover {
+            background: var(--bg-surface);
+            border-color: var(--alert-info);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .language-option input:checked + .language-card {
+            background: var(--broadcast-standby);
+            border-color: var(--alert-info);
+            box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.1);
+        }
+        
+        .language-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(0, 229, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--alert-info);
+            flex-shrink: 0;
+        }
+        
+        .language-content {
+            flex: 1;
+        }
+        
+        .language-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .language-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        
+        .language-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+        }
+        
+        .language-option input:checked + .language-card .language-badge {
+            background: var(--alert-info);
+            color: var(--bg-primary);
+        }
+        
+        /* ===== MESSAGE COMPOSITION ===== */
+        
+        .message-section {
+            margin-bottom: 32px;
+        }
+        
+        .message-composer {
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-primary);
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-primary);
+        }
+        
+        .message-counter {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        
+        .message-counter .count {
+            color: var(--alert-primary);
+            font-weight: 600;
+        }
+        
+        .message-priority {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--alert-primary);
+        }
+        
+        .alert-textarea {
+            width: 100%;
+            padding: 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: var(--font-headline);
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            min-height: 160px;
+            transition: all 0.3s ease;
+        }
+        
+        .alert-textarea:focus {
+            outline: none;
+            background: var(--bg-surface);
+        }
+        
+        .alert-textarea::placeholder {
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        
+        .message-preview {
+            padding: 20px;
+            border-top: 1px solid var(--border-primary);
+        }
+        
+        .preview-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 12px;
+        }
+        
+        .preview-content {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            min-height: 100px;
+            font-family: var(--font-mono);
+            overflow-y: auto;
+        }
+        
+        /* ===== BROADCAST CONTROLS ===== */
+        
+        .broadcast-section {
+            margin-bottom: 0;
+        }
+        
+        .broadcast-controls {
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid var(--border-primary);
+        }
+        
+        .confirmation-list {
+            margin-bottom: 24px;
+        }
+        
+        .confirmation-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .confirmation-item:hover {
+            background: var(--bg-surface);
+        }
+        
+        .confirmation-checkbox {
+            position: relative;
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        
+        .confirmation-checkbox input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .checkbox-display {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-secondary);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .confirmation-checkbox input:checked + .checkbox-display {
+            background: var(--alert-primary);
+            border-color: var(--alert-primary);
+        }
+        
+        .confirmation-checkbox input:checked + .checkbox-display svg {
+            opacity: 1;
+        }
+        
+        .checkbox-display svg {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            stroke-width: 3;
+        }
+        
+        .confirmation-label {
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        .broadcast-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .broadcast-btn {
+            flex: 1;
+            padding: 16px;
+            background: linear-gradient(135deg, 
+                rgba(255, 59, 48, 0.1), 
+                rgba(255, 59, 48, 0.2));
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            border-radius: 12px;
+            color: var(--alert-primary);
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .broadcast-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: var(--bg-tertiary);
+            border-color: var(--border-primary);
+            color: var(--text-tertiary);
+        }
+        
+        .broadcast-btn:not(:disabled):hover {
+            background: linear-gradient(135deg, 
+                rgba(255, 59, 48, 0.2), 
+                rgba(255, 59, 48, 0.3));
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(255, 59, 48, 0.3);
+        }
+        
+        .broadcast-btn:not(:disabled):active {
+            transform: translateY(0);
+        }
+        
+        .countdown-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .countdown-value {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+        
+        /* ===== TRANSMISSION LOG PANEL ===== */
+        
+        .transmission-log-panel {
+            background: var(--panel-log);
+            border: 1px solid var(--glass-log);
+            border-radius: 20px;
+            padding: 32px;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .transmission-log-panel:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--alert-info);
+        }
+        
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .log-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .log-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(0, 229, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--alert-info);
+        }
+        
+        .log-stats {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--alert-info);
+            font-family: var(--font-mono);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        /* Log Entries */
+        .log-container {
+            height: 500px;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        
+        .log-entries {
+            height: 100%;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        
+        .log-entry {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-primary);
+            transition: all 0.3s ease;
+            animation: slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+        }
+        
+        .log-entry:nth-child(1) { animation-delay: 0.1s; }
+        .log-entry:nth-child(2) { animation-delay: 0.2s; }
+        .log-entry:nth-child(3) { animation-delay: 0.3s; }
+        .log-entry:nth-child(4) { animation-delay: 0.4s; }
+        .log-entry:nth-child(5) { animation-delay: 0.5s; }
+        
+        .log-entry:hover {
+            background: var(--bg-surface);
+            border-color: var(--alert-info);
+            transform: translateX(4px);
+        }
+        
+        .entry-content {
+            margin-bottom: 16px;
+        }
+        
+        .entry-message {
+            font-size: 14px;
+            color: var(--text-primary);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+        
+        .entry-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .entry-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .badge-manglish {
+            background: rgba(0, 229, 255, 0.1);
+            color: var(--alert-info);
+        }
+        
+        .badge-english {
+            background: rgba(30, 215, 96, 0.1);
+            color: var(--alert-success);
+        }
+        
+        .entry-time {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
+        }
+        
+        .entry-status {
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-badge.active {
+            background: rgba(30, 215, 96, 0.1);
+            color: var(--alert-success);
+        }
+        
+        .status-badge.archived {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-tertiary);
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.active {
+            background: var(--alert-success);
+            position: relative;
+        }
+        
+        .status-dot.active::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            background: var(--alert-success);
+            animation: pulse 2s infinite;
+            opacity: 0.3;
+        }
+        
+        .status-dot.archived {
+            background: var(--text-tertiary);
+        }
+        
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 24px;
+            text-align: center;
+        }
+        
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            opacity: 0.3;
+            margin-bottom: 20px;
+        }
+        
+        .empty-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .empty-description {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            max-width: 300px;
+            line-height: 1.5;
+        }
+        
+        /* Log Footer */
+        .log-footer {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-primary);
+        }
+        
+        .footer-stat {
+            text-align: center;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .footer-stat:hover {
+            background: var(--bg-surface);
+            transform: translateY(-2px);
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--alert-info);
+            font-family: var(--font-mono);
+            margin-bottom: 8px;
+        }
+        
+        .stat-text {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .footer-stat .stat-number:last-child {
+            color: var(--alert-success);
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.2); opacity: 0.1; }
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Scrollbar Styling */
+        .log-entries::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .log-entries::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+            border-radius: 3px;
+        }
+        
+        .log-entries::-webkit-scrollbar-thumb {
+            background: var(--border-secondary);
+            border-radius: 3px;
+        }
+        
+        .log-entries::-webkit-scrollbar-thumb:hover {
+            background: var(--border-accent);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .alert-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
+            }
+            
+            .header-actions {
+                justify-content: stretch;
+            }
+            
+            .language-selector-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .broadcast-actions {
+                flex-direction: column;
+            }
+            
+            .log-stats {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .log-footer {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .entry-meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .entry-status {
+                justify-content: flex-start;
+                margin-top: 12px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- ALERT BROADCAST COMMAND INTERFACE -->
+    
+    <!-- Enhanced Topbar -->
+    <div class="topbar">
+        <div class="alert-header">
+            <div class="header-content">
+                <h1 class="page-title">ALERT BROADCAST COMMAND</h1>
+                <p class="page-subtitle">EMERGENCY TRANSMISSION SYSTEM // NEURAL CORE v2.1</p>
+                <div style="display: flex; align-items: center; gap: 12px; margin-top: 12px;">
+                    <div class="status-dot" style="background: var(--alert-success);"></div>
+                    <span style="font-size: 14px; color: var(--text-secondary);">
+                        BROADCAST SYSTEM: OPERATIONAL
+                    </span>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <a class="btn" href="/admin">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    COMMAND CENTER
+                </a>
+                
+                <a class="btn btn-outline" href="/monitor">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                    SYSTEM STATE
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALERT TRANSMISSION SYSTEM -->
+    <div class="alert-grid">
+        <!-- ALERT BROADCAST CONTROLS -->
+        <div class="card alert-transmission-panel">
+            <div class="transmission-header">
+                <div class="transmission-title">
+                    <div class="transmission-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 style="margin:0; color:var(--text-primary);">ALERT TRANSMISSION SYSTEM</h3>
+                        <p style="margin:4px 0 0; font-size:13px; color:var(--text-tertiary);">
+                            IMMEDIATE BROADCAST CONTROLS
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transmission Status -->
+            <div class="transmission-status">
+                <div class="status-header">
+                    <span class="status-label">SYSTEM READINESS</span>
+                    <div class="status-value">
+                        <div class="status-dot"></div>
+                        <span class="status-text">READY FOR TRANSMISSION</span>
+                    </div>
+                </div>
+                <div class="status-progress">
+                    <div class="progress-bar" style="width: 85%"></div>
+                </div>
+            </div>
+
+            <!-- ALERT BROADCAST FORM -->
+            <form method="POST" class="alert-broadcast-form" id="broadcastForm">
+                <!-- LANGUAGE SELECTOR -->
+                <div class="language-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="2" y1="12" x2="22" y2="12"/>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                            </svg>
+                        </div>
+                        <div class="section-title">
+                            <h4>BROADCAST LANGUAGE</h4>
+                            <div class="section-subtitle">SELECT TRANSMISSION PROTOCOL</div>
+                        </div>
+                        <span class="section-badge">PROTOCOL SELECT</span>
+                    </div>
+                    
+                    <div class="language-selector-grid">
+                        <label class="language-option">
+                            <input type="radio" name="language" value="malayalam">
+                            <div class="language-card">
+                                <div class="language-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M8 12h8"/>
+                                        <path d="M12 8v8"/>
+                                    </svg>
+                                </div>
+                                <div class="language-content">
+                                    <div class="language-name">MALAYALAM</div>
+                                    <div class="language-description">Type your message in Malayalam script</div>
+                                </div>
+                                <div class="language-badge">REGIONAL</div>
+                            </div>
+                        </label>
+                        <label class="language-option">
+                            <input type="radio" name="language" value="english" checked>
+                            <div class="language-card">
+                                <div class="language-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M2 12h20M2 12l4 4M2 12l4-4"/>
+                                        <path d="M22 12l-4 4M22 12l-4-4"/>
+                                        <circle cx="12" cy="12" r="10"/>
+                                    </svg>
+                                </div>
+                                <div class="language-content">
+                                    <div class="language-name">ENGLISH</div>
+                                    <div class="language-description">Type your message in English</div>
+                                </div>
+                                <div class="language-badge">GLOBAL</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- MESSAGE COMPOSITION -->
+                <div class="message-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </div>
+                        <div class="section-title">
+                            <h4>ALERT MESSAGE COMPOSITION</h4>
+                            <div class="section-subtitle">COMPOSE EMERGENCY BROADCAST</div>
+                        </div>
+                        <span class="section-badge" style="background: var(--broadcast-pending); color: var(--alert-warning);">
+                            IMMEDIATE BROADCAST
+                        </span>
+                    </div>
+                    
+                    <div class="message-composer">
+                        <div class="message-header">
+                            <div class="message-counter">
+                                CHARACTERS: <span class="count" id="charCount">0</span>/500
+                            </div>
+                            <div class="message-priority">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="12"/>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                                <span>HIGH PRIORITY TRANSMISSION</span>
+                            </div>
+                        </div>
+                        
+                        <textarea 
+                            name="message" 
+                            rows="6" 
+                            placeholder="COMPOSE ALERT MESSAGE HERE... 
+                            
+Example protocols:
+• SEVERE WEATHER WARNING - TAKE IMMEDIATE SHELTER
+• SYSTEM OUTAGE NOTIFICATION - SERVICE INTERRUPTION
+• SECURITY ALERT - RESTRICTED ACCESS ACTIVE
+• EMERGENCY BROADCAST - FOLLOW EVACUATION ROUTES"
+                            class="alert-textarea"
+                            id="messageInput"
+                            oninput="updateCharCount(this)"
+                        ></textarea>
+                        
+                        <div class="message-preview">
+                            <div class="preview-label">MESSAGE PREVIEW</div>
+                            <div id="messagePreview" class="preview-content">
+                                MESSAGE WILL APPEAR HERE...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BROADCAST CONTROLS -->
+                <div class="broadcast-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                        </div>
+                        <div class="section-title">
+                            <h4>TRANSMISSION CONTROLS</h4>
+                            <div class="section-subtitle">FINAL CONFIRMATION & BROADCAST</div>
+                        </div>
+                        <span class="section-badge" style="background: var(--broadcast-active); color: var(--alert-primary);">
+                            FINAL CONFIRMATION
+                        </span>
+                    </div>
+                    
+                    <div class="broadcast-controls">
+                        <div class="confirmation-list">
+                            <div class="confirmation-item">
+                                <label class="confirmation-checkbox">
+                                    <input type="checkbox" id="confirmBroadcast" required>
+                                    <div class="checkbox-display">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                    </div>
+                                </label>
+                                <span class="confirmation-label">
+                                    I CONFIRM THIS IS A VALID EMERGENCY BROADCAST
+                                </span>
+                            </div>
+                            
+                            <div class="confirmation-item">
+                                <label class="confirmation-checkbox">
+                                    <input type="checkbox" id="confirmPriority" required>
+                                    <div class="checkbox-display">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                    </div>
+                                </label>
+                                <span class="confirmation-label">
+                                    I VERIFY MESSAGE ACCURACY AND PRIORITY LEVEL
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="broadcast-actions">
+                            <button type="submit" class="broadcast-btn" id="broadcastButton" disabled>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                    <line x1="12" y1="9" x2="12" y2="13"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                INITIATE BROADCAST
+                                <div class="countdown-display">
+                                    <span class="countdown-value" id="countdown">5</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- ALERT TRANSMISSION LOG -->
+        <div class="card transmission-log-panel">
+            <div class="log-header">
+                <div class="log-title">
+                    <div class="log-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                            <polyline points="13 2 13 9 20 9"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 style="margin:0; color:var(--text-primary);">TRANSMISSION LOG</h3>
+                        <p style="margin:4px 0 0; font-size:13px; color:var(--text-tertiary);">
+                            RECENT BROADCAST ACTIVITY
+                        </p>
+                    </div>
+                </div>
+                <div class="log-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ alerts|length }}</div>
+                        <div class="stat-label">TRANSMISSIONS</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="log-container">
+                <div class="log-entries">
+                    {% if alerts %}
+                        {% for a in alerts %}
+                            <div class="log-entry">
+                                <div class="entry-content">
+                                    <div class="entry-message">{{ a.message }}</div>
+                                    <div class="entry-meta">
+                                        <span class="entry-badge badge-{{ a.source }}">
+                                            {% if a.source == 'malayalam' %}MALAYALAM{% elif a.source == 'english' %}ENGLISH{% else %}{{ a.source|upper }}{% endif %} PROTOCOL
+                                        </span>
+                                        <span class="entry-time">{{ a.last_updated }}</span>
+                                    </div>
+                                </div>
+                                <div class="entry-status">
+                                    <div class="status-badge {% if loop.first %}active{% else %}archived{% endif %}">
+                                        <div class="status-dot {% if loop.first %}active{% else %}archived{% endif %}"></div>
+                                        <span>{% if loop.first %}ACTIVE{% else %}ARCHIVED{% endif %}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                                <polyline points="13 2 13 9 20 9"/>
+                            </svg>
+                            <h4 class="empty-title">NO TRANSMISSION HISTORY</h4>
+                            <p class="empty-description">
+                                No broadcast transmissions recorded.
+                                Alert history will appear here after first broadcast.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="log-footer">
+                <div class="footer-stat">
+                    <div class="stat-number">{{ alerts|length }}</div>
+                    <div class="stat-text">TOTAL TRANSMISSIONS</div>
+                </div>
+                <div class="footer-stat">
+                    <div class="stat-number">
+                        {% set recent_count = 0 %}
+                        {% for a in alerts %}
+                            {% if a.last_updated and today in a.last_updated|string %}
+                                {% set recent_count = recent_count + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ recent_count }}
+                    </div>
+                    <div class="stat-text">LAST 24H</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification System -->
+    <div id="notificationSystem" style="position:fixed; top:20px; right:20px; z-index:10000; display:flex; flex-direction:column; gap:12px; max-width:400px;"></div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // Enhanced Alert Broadcast Controller
+        class AlertBroadcast {
+            constructor() {
+                this.notificationSystem = document.getElementById('notificationSystem');
+                this.broadcastForm = document.getElementById('broadcastForm');
+                this.broadcastButton = document.getElementById('broadcastButton');
+                this.messageInput = document.getElementById('messageInput');
+                this.countdownElement = document.getElementById('countdown');
+                this.checkboxes = document.querySelectorAll('.confirmation-checkbox input');
+                this.languageOptions = document.querySelectorAll('.language-option input');
+                this.initializeEventListeners();
+                this.initializeCountdown();
+                this.initializeAnimations();
+            }
+            
+            initializeEventListeners() {
+                // Checkbox validation
+                this.checkboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', () => this.validateBroadcast());
+                });
+                
+                // Language option selection
+                this.languageOptions.forEach(option => {
+                    option.addEventListener('change', () => {
+                        this.updateLanguageSelection(option.value);
+                    });
+                });
+                
+                // Form submission
+                this.broadcastForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.initiateBroadcast();
+                });
+                
+                // Message input validation
+                this.messageInput.addEventListener('input', (e) => {
+                    this.updateCharCount(e.target);
+                    this.validateMessage(e.target.value);
+                });
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (e) => {
+                    // Ctrl/Cmd + Enter to submit
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                        if (!this.broadcastButton.disabled) {
+                            this.initiateBroadcast();
+                        }
+                    }
+                    
+                    // Alt + 1 for language selection
+                    if (e.altKey && e.key === '1') {
+                        this.languageOptions[0].checked = true;
+                        this.updateLanguageSelection('manglish');
+                    }
+                    
+                    // Alt + 2 for language selection
+                    if (e.altKey && e.key === '2') {
+                        this.languageOptions[1].checked = true;
+                        this.updateLanguageSelection('english');
+                    }
+                });
+            }
+            
+            initializeCountdown() {
+                // Start with 5 second countdown
+                this.countdown = 5;
+                this.updateCountdownDisplay();
+                
+                // Countdown interval
+                setInterval(() => {
+                    if (this.countdown > 0) {
+                        this.countdown--;
+                        this.updateCountdownDisplay();
+                    } else {
+                        this.countdown = 5;
+                    }
+                }, 1000);
+            }
+            
+            initializeAnimations() {
+                // Language card hover effects
+                document.querySelectorAll('.language-card').forEach(card => {
+                    card.addEventListener('mouseenter', () => {
+                        card.style.transform = 'translateY(-4px)';
+                    });
+                    
+                    card.addEventListener('mouseleave', () => {
+                        const input = card.parentElement.querySelector('input');
+                        if (!input.checked) {
+                            card.style.transform = 'translateY(0)';
+                        }
+                    });
+                });
+                
+                // Log entry hover effects
+                document.querySelectorAll('.log-entry').forEach(entry => {
+                    entry.addEventListener('mouseenter', () => {
+                        entry.style.transform = 'translateX(4px)';
+                    });
+                    
+                    entry.addEventListener('mouseleave', () => {
+                        entry.style.transform = 'translateX(0)';
+                    });
+                });
+                
+                // Broadcast button animation
+                this.broadcastButton.addEventListener('mouseenter', () => {
+                    if (!this.broadcastButton.disabled) {
+                        this.broadcastButton.style.animation = 'pulse 1s infinite';
+                    }
+                });
+                
+                this.broadcastButton.addEventListener('mouseleave', () => {
+                    this.broadcastButton.style.animation = '';
+                });
+            }
+            
+            validateBroadcast() {
+                const allChecked = Array.from(this.checkboxes).every(cb => cb.checked);
+                const messageValid = this.messageInput.value.trim().length >= 10;
+                this.broadcastButton.disabled = !(allChecked && messageValid);
+                // Removed notification for 'Ready to Broadcast'
+            }
+            
+            validateMessage(message) {
+                const length = message.trim().length;
+                if (length === 0) {
+                    this.messageInput.style.borderColor = '';
+                    this.messageInput.style.boxShadow = '';
+                } else if (length < 10) {
+                    this.messageInput.style.borderColor = 'var(--alert-warning)';
+                    this.messageInput.style.boxShadow = '0 0 0 2px rgba(255, 184, 32, 0.1)';
+                } else if (length > 500) {
+                    this.messageInput.style.borderColor = 'var(--alert-primary)';
+                    this.messageInput.style.boxShadow = '0 0 0 2px rgba(255, 59, 48, 0.1)';
+                    this.showNotification('Message Too Long', 'Maximum 500 characters allowed.', 'error');
+                } else {
+                    this.messageInput.style.borderColor = 'var(--alert-success)';
+                    this.messageInput.style.boxShadow = '0 0 0 2px rgba(30, 215, 96, 0.1)';
+                }
+                this.validateBroadcast();
+            }
+            
+            updateCharCount(textarea) {
+                const charCount = textarea.value.length;
+                document.getElementById('charCount').textContent = charCount;
+                document.getElementById('messagePreview').textContent = 
+                    textarea.value || 'MESSAGE WILL APPEAR HERE...';
+            }
+            
+            updateLanguageSelection(language) {
+                // Update UI to show selected language
+                document.querySelectorAll('.language-card').forEach(card => {
+                    card.style.transform = 'translateY(0)';
+                });
+                
+                const selectedCard = document.querySelector(`input[value="${language}"]`).parentElement.querySelector('.language-card');
+                selectedCard.style.transform = 'translateY(-2px)';
+                
+                this.showNotification('Language Selected', `${language === 'manglish' ? 'Malayalam-English Hybrid' : 'English Standard'} protocol selected`, 'info');
+            }
+            
+            updateCountdownDisplay() {
+                this.countdownElement.textContent = this.countdown;
+                
+                // Update color based on countdown
+                if (this.countdown <= 2) {
+                    this.countdownElement.style.color = 'var(--alert-primary)';
+                    this.countdownElement.style.animation = 'pulse 0.5s infinite';
+                } else if (this.countdown <= 3) {
+                    this.countdownElement.style.color = 'var(--alert-warning)';
+                    this.countdownElement.style.animation = '';
+                } else {
+                    this.countdownElement.style.color = 'var(--text-primary)';
+                    this.countdownElement.style.animation = '';
+                }
+            }
+            
+            async initiateBroadcast() {
+                const formData = new FormData(this.broadcastForm);
+                const message = formData.get('message');
+                const language = formData.get('language');
+                
+                if (!message || message.trim().length < 10) {
+                    this.showNotification('Invalid Message', 'Please enter a valid alert message.', 'error');
+                    return;
+                }
+                
+                // Show broadcasting state
+                const originalText = this.broadcastButton.innerHTML;
+                this.broadcastButton.innerHTML = `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="rotating">
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    BROADCASTING...
+                    <div class="countdown-display">
+                        <span class="countdown-value">--</span>
+                    </div>
+                `;
+                this.broadcastButton.disabled = true;
+                
+                // Show broadcast animation
+                this.showBroadcastAnimation();
+                
+                try {
+                    // Simulate API call delay
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    // Submit form
+                    this.broadcastForm.submit();
+                    
+                    // Show success notification
+                    this.showNotification('Broadcast Initiated', 'Emergency alert transmission started successfully.', 'success');
+                    
+                } catch (error) {
+                    console.error('Broadcast error:', error);
+                    
+                    // Restore button
+                    this.broadcastButton.innerHTML = originalText;
+                    this.broadcastButton.disabled = false;
+                    
+                    this.showNotification('Broadcast Failed', 'Unable to initiate emergency broadcast.', 'error');
+                }
+            }
+            
+            showBroadcastAnimation() {
+                // Create broadcast animation overlay
+                const overlay = document.createElement('div');
+                overlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.8);
+                    backdrop-filter: blur(10px);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                    animation: fadeIn 0.3s ease-out;
+                `;
+                
+                overlay.innerHTML = `
+                    <div style="text-align: center; max-width: 600px; padding: 40px;">
+                        <div style="width: 80px; height: 80px; margin: 0 auto 24px; position: relative;">
+                            <div style="width: 100%; height: 100%; border: 4px solid var(--alert-primary); border-radius: 50%; position: relative; overflow: hidden;">
+                                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: conic-gradient(transparent, var(--alert-primary), transparent); animation: rotate 2s linear infinite;"></div>
+                            </div>
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--alert-primary)" stroke-width="2" style="position: absolute; top: 20px; left: 20px;">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                        </div>
+                        <h3 style="color: var(--text-primary); font-size: 24px; margin-bottom: 12px;">EMERGENCY BROADCAST INITIATED</h3>
+                        <p style="color: var(--text-secondary); font-size: 16px; line-height: 1.5; margin-bottom: 32px;">
+                            Transmitting emergency alert to all connected systems.<br>
+                            Please do not close this window during transmission.
+                        </p>
+                        <div style="display: flex; align-items: center; gap: 12px; justify-content: center;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="pulse-dot" style="background: var(--alert-primary);"></div>
+                                <span style="color: var(--alert-primary); font-weight: 600;">TRANSMITTING</span>
+                            </div>
+                            <div style="flex: 1; max-width: 300px; height: 6px; background: var(--border-primary); border-radius: 3px; overflow: hidden;">
+                                <div style="width: 100%; height: 100%; background: linear-gradient(90deg, var(--alert-primary), var(--alert-warning)); animation: progress 2s ease-in-out infinite;"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(overlay);
+                
+                // Remove overlay after 3 seconds (in real app, wait for actual broadcast completion)
+                setTimeout(() => {
+                    overlay.style.animation = 'fadeOut 0.3s ease-out forwards';
+                    setTimeout(() => {
+                        if (overlay.parentNode) {
+                            overlay.parentNode.removeChild(overlay);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+            
+            showNotification(title, message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification notification-${type}`;
+                notification.innerHTML = `
+                    <div style="display:flex; align-items:flex-start; gap:12px;">
+                        <div style="flex-shrink:0; width:24px;height:24px; border-radius:6px; background:${
+                            type === 'success' ? 'rgba(30,215,96,0.1)' : 
+                            type === 'warning' ? 'rgba(255,184,32,0.1)' : 
+                            type === 'error' ? 'rgba(255,59,48,0.1)' : 
+                            'rgba(0,229,255,0.1)'
+                        }; display:flex; align-items:center; justify-content:center; color:${
+                            type === 'success' ? 'var(--alert-success)' : 
+                            type === 'warning' ? 'var(--alert-warning)' : 
+                            type === 'error' ? 'var(--alert-primary)' : 
+                            'var(--alert-info)'
+                        };">
+                            ${type === 'success' ? '✓' :
+                              type === 'warning' ? '⚠' :
+                              type === 'error' ? '✗' : 'ⓘ'}
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px;">${title}</div>
+                            <div style="font-size:14px; color:var(--text-secondary);">${message}</div>
+                        </div>
+                        <button class="close-notification" style="background:none; border:none; color:var(--text-tertiary); cursor:pointer; padding:4px;">
+                            ×
+                        </button>
+                    </div>
+                `;
+                
+                // Add styles
+                notification.style.cssText = `
+                    background: var(--bg-surface);
+                    border: 1px solid ${
+                        type === 'success' ? 'rgba(30,215,96,0.3)' : 
+                        type === 'warning' ? 'rgba(255,184,32,0.3)' : 
+                        type === 'error' ? 'rgba(255,59,48,0.3)' : 
+                        'rgba(0,229,255,0.3)'
+                    };
+                    border-radius: 12px;
+                    padding: 16px;
+                    backdrop-filter: blur(20px);
+                    box-shadow: var(--shadow-lg);
+                    animation: slideInRight 0.3s ease-out;
+                    transform-origin: top right;
+                `;
+                
+                this.notificationSystem.appendChild(notification);
+                
+                // Add close button functionality
+                notification.querySelector('.close-notification').addEventListener('click', () => {
+                    this.removeNotification(notification);
+                });
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    this.removeNotification(notification);
+                }, 5000);
+            }
+            
+            removeNotification(notification) {
+                notification.style.animation = 'slideOutRight 0.3s ease-out forwards';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }
+        }
+        
+        // Initialize alert broadcast when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.alertBroadcast = new AlertBroadcast();
+            
+            // Add CSS animations
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                
+                @keyframes slideOutRight {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+                
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; }
+                }
+                
+                @keyframes rotate {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+                
+                @keyframes progress {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(100%); }
+                }
+                
+                .rotating {
+                    animation: rotate 1s linear infinite;
+                }
+                
+                .notification {
+                    margin-bottom: 12px;
+                }
+                
+                .notification:last-child {
+                    margin-bottom: 0;
+                }
+                
+                .pulse-dot {
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 50%;
+                    background: var(--alert-primary);
+                    position: relative;
+                }
+                
+                .pulse-dot::before {
+                    content: '';
+                    position: absolute;
+                    top: -4px;
+                    left: -4px;
+                    right: -4px;
+                    bottom: -4px;
+                    border-radius: 50%;
+                    background: var(--alert-primary);
+                    animation: pulse 2s infinite;
+                    opacity: 0.3;
+                }
+            `;
+            document.head.appendChild(style);
+        });
+        
+        // Global functions
+        function updateCharCount(textarea) {
+            if (window.alertBroadcast) {
+                window.alertBroadcast.updateCharCount(textarea);
+            }
+        }
+    </script>
+{% endblock %}
